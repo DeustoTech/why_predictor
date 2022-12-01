@@ -88,13 +88,13 @@ def load_files(training_set: Dict[str, List[str]]) -> pd.DataFrame:
 
 
 def split_dataset_in_train_and_test(
-    data: pd.DataFrame,
+    data: pd.DataFrame, train_ratio: float
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Split the dataset in train and test"""
     logger.info("Generating train and test sets...")
-    half = int(len(data) / 2)
-    train = data.iloc[:half]
-    test = data.iloc[half:]
+    limit = int(len(data) * train_ratio)
+    train = data.iloc[:limit]
+    test = data.iloc[limit:]
     logger.info("Train\n%r", train.head())
     logger.info("Train shape: %r", train.shape)
     logger.info("Test\n%r", test.head())

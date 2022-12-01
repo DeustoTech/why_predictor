@@ -43,10 +43,18 @@ def generate_parser() -> argparse.ArgumentParser:
         default=os.getenv("DATASET_DIRNAME"),
     )
     parser.add_argument(
-        "--percentage-training",
+        "--percentage-csv-files-for-training",
         dest="training_percentage",
         type=float,
         default=os.getenv("TRAINING_PERCENTAGE"),
+    )
+    parser.add_argument(
+        "--train-test-ratio",
+        dest="train_test_ratio",
+        type=float,
+        default=os.getenv("TRAIN_TEST_RATIO"),
+        help="ratio of samples used for training "
+        + "(1 - this value will be used for testing)",
     )
     return parser
 
@@ -66,9 +74,9 @@ def execute(args: argparse.Namespace) -> None:
         train_output,
         test_features,
         test_output,
-    ) = split_dataset_in_train_and_test(data)
+    ) = split_dataset_in_train_and_test(data, args.train_test_ratio)
     # Linear regression
-    linear_regression.generate_model(
+    linear_regression.fit(
         train_features, train_output, test_features, test_output
     )
 
