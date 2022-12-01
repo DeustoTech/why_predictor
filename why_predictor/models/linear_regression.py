@@ -26,6 +26,7 @@ def fit(
     test_output: pd.DataFrame,
 ) -> Tuple[Dict[str, Any], Any]:
     """Fit Linear Regression Model"""
+    logger.debug("Calculating linear regression...")
     linear_model = generate_model(train_features, train_output)
     predictions = linear_model.predict(test_features)
     logger.debug(

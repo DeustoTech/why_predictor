@@ -14,7 +14,9 @@ from .load_sets import (
     select_training_set,
     split_dataset_in_train_and_test,
 )
-from .models import linear_regression
+from .models import (
+    linear_regression,
+)
 
 logging.basicConfig(
     stream=sys.stdout,
