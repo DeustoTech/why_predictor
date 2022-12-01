@@ -6,9 +6,7 @@ import os
 import sys
 from pathlib import Path
 
-import numpy as np
 from dotenv import load_dotenv
-from sklearn.linear_model import LinearRegression  # type: ignore
 
 from .load_sets import (
     find_csv_files,
@@ -16,6 +14,7 @@ from .load_sets import (
     select_training_set,
     split_dataset_in_train_and_test,
 )
+from .models import linear_regression
 
 logging.basicConfig(
     stream=sys.stdout,
@@ -62,19 +61,15 @@ def execute(args: argparse.Namespace) -> None:
     # Load training set
     data = load_files(training_set)
     # Train and test datasets
-    train, test = split_dataset_in_train_and_test(data)
-    train_features = train.iloc[:, :72]
-    train_output = train.iloc[:, 72:]
-    test_features = test.iloc[:, :72]
-    test_output = test.iloc[:, 72:]
-    model = LinearRegression()
-    linear_model = model.fit(train_features, train_output)
-    predictions = linear_model.predict(test_features)
-    logger.debug("Accuracy: %r", model.score(test_features, test_output))
-    logger.info(
-        "MAPE linear regression:\n%r",
-        np.absolute((test_output - predictions) / test_output).sum()
-        / len(test_output),
+    (
+        train_features,
+        train_output,
+        test_features,
+        test_output,
+    ) = split_dataset_in_train_and_test(data)
+    # Linear regression
+    linear_regression.generate_model(
+        train_features, train_output, test_features, test_output
     )
 
 

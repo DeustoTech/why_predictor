@@ -1,9 +1,9 @@
 """Load datasets"""
 from .loading_functions import (
-    get_datasets,
     find_csv_files,
-    select_training_set,
+    get_datasets,
     load_files,
+    select_training_set,
     split_dataset_in_train_and_test,
 )
 
