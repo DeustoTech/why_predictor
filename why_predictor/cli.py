@@ -17,6 +17,7 @@ from .load_sets import (
 from .models import (
     knn_regression,
     linear_regression,
+    random_forest_regression,
     tree_regression,
 )
 
@@ -92,6 +93,10 @@ def execute(args: argparse.Namespace) -> None:
     )
     # Decision Tree regression
     tree_regression.fit(
+        train_features, train_output, test_features, test_output
+    )
+    # Random Forest Regression
+    random_forest_regression.fit(
         train_features, train_output, test_features, test_output
     )
 
