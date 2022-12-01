@@ -3,6 +3,7 @@ import math
 from enum import Enum
 from functools import partial
 from typing import Any
+
 import numpy as np
 import pandas as pd  # type: ignore
 
@@ -31,6 +32,7 @@ def calculate_smape(output: pd.DataFrame, predictions: pd.DataFrame) -> Any:
 
 class ErrorType(Enum):
     """Enum with error calculators"""
+
     MAPE = partial(calculate_mape)
     MAE = partial(calculate_mae)
     RMSE = partial(calculate_rmse)
