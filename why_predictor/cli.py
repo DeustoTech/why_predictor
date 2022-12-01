@@ -36,17 +36,20 @@ def generate_parser() -> argparse.ArgumentParser:
         "--base-path-dataset",
         dest="dataset_basepath",
         default=os.getenv("DATASET_BASEPATH"),
+        help="base path where dataset are stored",
     )
     parser.add_argument(
         "--dataset-dir-name",
         dest="dataset_dir_name",
         default=os.getenv("DATASET_DIRNAME"),
+        help="exact name of the directory containing the CSV files",
     )
     parser.add_argument(
         "--percentage-csv-files-for-training",
         dest="training_percentage",
         type=float,
         default=os.getenv("TRAINING_PERCENTAGE"),
+        help="Percentage of the CSV files that will be used for training",
     )
     parser.add_argument(
         "--train-test-ratio",
