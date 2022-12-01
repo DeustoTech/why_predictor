@@ -17,6 +17,7 @@ from .load_sets import (
 from .models import (
     knn_regression,
     linear_regression,
+    tree_regression,
 )
 
 logging.basicConfig(
@@ -87,6 +88,10 @@ def execute(args: argparse.Namespace) -> None:
     )
     # KNN regression
     knn_regression.fit(
+        train_features, train_output, test_features, test_output
+    )
+    # Decision Tree regression
+    tree_regression.fit(
         train_features, train_output, test_features, test_output
     )
 
