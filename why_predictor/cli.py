@@ -74,6 +74,20 @@ def generate_parser() -> argparse.ArgumentParser:
         default=os.getenv("ERROR_TYPE"),
         help="metric to calculate the error",
     )
+    parser.add_argument(
+        "--window-num-features",
+        dest="num_features",
+        type=int,
+        default=os.getenv("NUM_FEATURES"),
+        help="num of hours used as features",
+    )
+    parser.add_argument(
+        "--window-num-predictions",
+        dest="num_predictions",
+        type=int,
+        default=os.getenv("NUM_PREDICTIONS"),
+        help="num of hours used as predictions",
+    )
     argcomplete.autocomplete(parser)
     return parser
 
@@ -86,14 +100,16 @@ def execute(args: argparse.Namespace) -> None:
     # Select training set
     training_set, _ = select_training_set(series, args.training_percentage)
     # Load training set
-    data = load_files(training_set)
+    data = load_files(training_set, args.num_features, args.num_predictions)
     # Train and test datasets
     (
         train_features,
         train_output,
         test_features,
         test_output,
-    ) = split_dataset_in_train_and_test(data, args.train_test_ratio)
+    ) = split_dataset_in_train_and_test(
+        data, args.train_test_ratio, args.num_features
+    )
     # Linear regression
     linear_regression.fit(
         train_features,

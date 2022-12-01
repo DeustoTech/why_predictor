@@ -52,10 +52,15 @@ def select_training_set(
     return training_set, no_training_set
 
 
-def load_files(training_set: Dict[str, List[str]]) -> pd.DataFrame:
+def load_files(
+    training_set: Dict[str, List[str]],
+    num_features: int,
+    num_predictions: int,
+) -> pd.DataFrame:
     """Load training set"""
     logger.info("Loading CSV files...")
     matrix = []
+    total_window = num_features + num_predictions
     for idxset, name in enumerate(training_set):
         logger.debug(
             "Dataset (%d/%d): %s", idxset + 1, len(training_set), name
@@ -79,16 +84,18 @@ def load_files(training_set: Dict[str, List[str]]) -> pd.DataFrame:
                 .reindex(columns=data.columns)
             )
             # Generate rolling window values
-            for i in range(len(data) - 78):
-                matrix.append(list(data["kWh"][i : i + 78]))
+            for i in range(len(data) - total_window):
+                matrix.append(list(data["kWh"][i : i + total_window]))
     logger.debug("Generating DataFrame...")
-    data = pd.DataFrame(matrix, columns=[f"col{i}" for i in range(1, 79)])
+    data = pd.DataFrame(
+        matrix, columns=[f"col{i}" for i in range(1, total_window + 1)]
+    )
     logger.info("CSV files loaded.")
     return data
 
 
 def split_dataset_in_train_and_test(
-    data: pd.DataFrame, train_ratio: float
+    data: pd.DataFrame, train_ratio: float, num_features: int
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Split the dataset in train and test"""
     logger.info("Generating train and test sets...")
@@ -100,8 +107,8 @@ def split_dataset_in_train_and_test(
     logger.info("Test\n%r", test.head())
     logger.info("Test shape: %r", test.shape)
     logger.info(test.shape)
-    train_features = train.iloc[:, :72]
-    train_output = train.iloc[:, 72:]
-    test_features = test.iloc[:, :72]
-    test_output = test.iloc[:, 72:]
+    train_features = train.iloc[:, :num_features]
+    train_output = train.iloc[:, num_features:]
+    test_features = test.iloc[:, :num_features]
+    test_output = test.iloc[:, num_features:]
     return (train_features, train_output, test_features, test_output)
