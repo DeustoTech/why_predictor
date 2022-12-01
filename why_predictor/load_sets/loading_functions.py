@@ -74,7 +74,7 @@ def load_files(training_set: Dict[str, List[str]]) -> pd.DataFrame:
             data = (
                 data.set_index("timestamp")
                 .resample("60T")
-                .first()
+                .sum()
                 .reset_index()
                 .reindex(columns=data.columns)
             )
