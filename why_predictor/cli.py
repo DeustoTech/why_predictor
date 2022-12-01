@@ -1,5 +1,6 @@
 """ WHY predictor
 """
+import argcomplete
 import argparse
 import logging
 import os
@@ -64,6 +65,7 @@ def generate_parser() -> argparse.ArgumentParser:
         help="ratio of samples used for training "
         + "(1 - this value will be used for testing)",
     )
+    argcomplete.autocomplete(parser)
     return parser
 
 
