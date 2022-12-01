@@ -1,14 +1,15 @@
 """ WHY predictor
 """
-import argcomplete
 import argparse
 import logging
 import os
 import sys
 from pathlib import Path
 
+import argcomplete  # type: ignore
 from dotenv import load_dotenv
 
+from .errors import ErrorType
 from .load_sets import (
     find_csv_files,
     load_files,
@@ -65,6 +66,14 @@ def generate_parser() -> argparse.ArgumentParser:
         help="ratio of samples used for training "
         + "(1 - this value will be used for testing)",
     )
+    parser.add_argument(
+        "--error-type",
+        dest="error_type",
+        choices=["MAPE", "MAE", "RMSE", "SMAPE"],
+        type=str.upper,
+        default=os.getenv("ERROR_TYPE"),
+        help="metric to calculate the error",
+    )
     argcomplete.autocomplete(parser)
     return parser
 
@@ -87,19 +96,35 @@ def execute(args: argparse.Namespace) -> None:
     ) = split_dataset_in_train_and_test(data, args.train_test_ratio)
     # Linear regression
     linear_regression.fit(
-        train_features, train_output, test_features, test_output
+        train_features,
+        train_output,
+        test_features,
+        test_output,
+        ErrorType[args.error_type],
     )
     # KNN regression
     knn_regression.fit(
-        train_features, train_output, test_features, test_output
+        train_features,
+        train_output,
+        test_features,
+        test_output,
+        ErrorType[args.error_type],
     )
     # Decision Tree regression
     tree_regression.fit(
-        train_features, train_output, test_features, test_output
+        train_features,
+        train_output,
+        test_features,
+        test_output,
+        ErrorType[args.error_type],
     )
     # Random Forest Regression
     random_forest_regression.fit(
-        train_features, train_output, test_features, test_output
+        train_features,
+        train_output,
+        test_features,
+        test_output,
+        ErrorType[args.error_type],
     )
 
 
