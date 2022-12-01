@@ -15,6 +15,7 @@ from .load_sets import (
     split_dataset_in_train_and_test,
 )
 from .models import (
+    knn_regression,
     linear_regression,
 )
 
@@ -82,6 +83,10 @@ def execute(args: argparse.Namespace) -> None:
     ) = split_dataset_in_train_and_test(data, args.train_test_ratio)
     # Linear regression
     linear_regression.fit(
+        train_features, train_output, test_features, test_output
+    )
+    # KNN regression
+    knn_regression.fit(
         train_features, train_output, test_features, test_output
     )
 
