@@ -1,49 +1,22 @@
 """Linear Regression model"""
 import logging
-from typing import Any, Dict, Tuple
+from typing import Any
 
-import pandas as pd  # type: ignore
 from sklearn.neighbors import KNeighborsRegressor  # type: ignore
 
-from ..errors import ErrorType
+from .abstract_model import ChainedModel
 
 logger = logging.getLogger("logger")
 
 
-def generate_model(
-    train_features: pd.DataFrame,
-    train_output: pd.DataFrame,
-) -> Any:
-    """Generate k-Nearest Neighbors Regression model"""
-    model = KNeighborsRegressor()
-    knn_model = model.fit(train_features, train_output)
-    return knn_model
+class KNNRegressionModel(ChainedModel):
+    """KNN Regression Class"""
 
+    name = "KNN Regression"
 
-def fit(
-    train_features: pd.DataFrame,
-    train_output: pd.DataFrame,
-    test_features: pd.DataFrame,
-    test_output: pd.DataFrame,
-    error: ErrorType,
-) -> Tuple[Dict[str, Any], Any]:
-    """Fit k-Nearest Neighbors Regression Model"""
-    logger.debug("Calculating KNN regression...")
-    knn_model = generate_model(train_features, train_output.iloc[:, 1])
-    predictions = pd.DataFrame(knn_model.predict(test_features))
-    for i in range(1, test_output.shape[1]):
-        features = pd.concat([test_features.iloc[:, i:], predictions], axis=1)
-        features = features.set_axis(
-            [f"col{i}" for i in range(1, features.shape[1] + 1)], axis=1
+    def generate_model(self) -> Any:
+        model = KNeighborsRegressor()
+        knn_model = model.fit(
+            self.train_features, self.train_output.iloc[:, 1]
         )
-        predictions = pd.concat(
-            [predictions, pd.Series(knn_model.predict(features))], axis=1
-        )
-    predictions = predictions.set_axis(test_output.columns, axis=1)
-    # We cannot measure the Accuracy this way
-    # logger.debug(
-    #     "Accuracy: %r", linear_model.score(test_features, test_output)
-    # )
-    error_metric = error.value(test_output, predictions, train_features)
-    logger.info("%s KNN regression:\n%r", error.name, error_metric)
-    return {}, error_metric
+        return knn_model

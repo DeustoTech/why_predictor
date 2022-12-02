@@ -9,7 +9,6 @@ from pathlib import Path
 import argcomplete  # type: ignore
 from dotenv import load_dotenv
 
-from .errors import ErrorType
 from .load_sets import (
     find_csv_files,
     load_files,
@@ -17,10 +16,10 @@ from .load_sets import (
     split_dataset_in_train_and_test,
 )
 from .models import (
-    knn_regression,
-    linear_regression,
-    random_forest_regression,
-    tree_regression,
+    DecissionTreeRegressionModel,
+    KNNRegressionModel,
+    LinearRegressionModel,
+    RandomForestRegressionModel,
 )
 
 logging.basicConfig(
@@ -111,36 +110,24 @@ def execute(args: argparse.Namespace) -> None:
         data, args.train_test_ratio, args.num_features
     )
     # Linear regression
-    linear_regression.fit(
-        train_features,
-        train_output,
+    LinearRegressionModel(train_features, train_output).fit(
         test_features,
         test_output,
-        ErrorType[args.error_type],
     )
     # KNN regression
-    knn_regression.fit(
-        train_features,
-        train_output,
+    KNNRegressionModel(train_features, train_output).fit(
         test_features,
         test_output,
-        ErrorType[args.error_type],
     )
     # Decision Tree regression
-    tree_regression.fit(
-        train_features,
-        train_output,
+    DecissionTreeRegressionModel(train_features, train_output).fit(
         test_features,
         test_output,
-        ErrorType[args.error_type],
     )
     # Random Forest Regression
-    random_forest_regression.fit(
-        train_features,
-        train_output,
+    RandomForestRegressionModel(train_features, train_output).fit(
         test_features,
         test_output,
-        ErrorType[args.error_type],
     )
 
 

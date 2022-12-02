@@ -1,37 +1,20 @@
-"""Linear Regression model"""
+"""Multioutput Decission Tree Regression model"""
 import logging
-from typing import Any, Dict, Tuple
+from typing import Any
 
-import pandas as pd  # type: ignore
 from sklearn.tree import DecisionTreeRegressor  # type: ignore
 
-from ..errors import ErrorType
+from .abstract_model import MultioutputModel
 
 logger = logging.getLogger("logger")
 
 
-def generate_model(
-    train_features: pd.DataFrame,
-    train_output: pd.DataFrame,
-) -> Any:
-    """Generate Decision Tree Regression model"""
-    model = DecisionTreeRegressor()
-    tree_model = model.fit(train_features, train_output)
-    return tree_model
+class MultioutputDecissionTreeRegressionModel(MultioutputModel):
+    """Decission Tree Regression Class"""
 
+    name = "Multioutput Decission Tree Regression"
 
-def fit(
-    train_features: pd.DataFrame,
-    train_output: pd.DataFrame,
-    test_features: pd.DataFrame,
-    test_output: pd.DataFrame,
-    error: ErrorType,
-) -> Tuple[Dict[str, Any], Any]:
-    """Fit Decision Tree Regression Model"""
-    logger.debug("Calculating Decision Tree regression...")
-    tree_model = generate_model(train_features, train_output)
-    predictions = tree_model.predict(test_features)
-    logger.debug("Accuracy: %r", tree_model.score(test_features, test_output))
-    error_metric = error.value(test_output, predictions, train_features)
-    logger.info("%s decision tree regression:\n%r", error.name, error_metric)
-    return {}, error_metric
+    def generate_model(self) -> Any:
+        model = DecisionTreeRegressor()
+        multi_dt_model = model.fit(self.train_features, self.train_output)
+        return multi_dt_model
