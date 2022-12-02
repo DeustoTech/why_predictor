@@ -1,5 +1,4 @@
 """Errors"""
-import math
 from enum import Enum
 from functools import partial
 from typing import Any
@@ -35,7 +34,7 @@ def calculate_rmse(
     output: pd.DataFrame, predictions: pd.DataFrame, _: pd.DataFrame = None
 ) -> Any:
     """Calculate RMSE"""
-    return math.sqrt((output - predictions).pow(2).sum() / len(output))
+    return ((output - predictions).pow(2).sum() / len(output)).pow(1.0 / 2)
 
 
 def calculate_smape(
