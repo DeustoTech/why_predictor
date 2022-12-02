@@ -101,7 +101,7 @@ def split_dataset_in_train_and_test(
     logger.info("Generating train and test sets...")
     limit = int(len(data) * train_ratio)
     train = data.iloc[:limit]
-    test = data.iloc[limit:]
+    test = data.iloc[limit:].reset_index(drop=True)
     logger.info("Train\n%r", train.head())
     logger.info("Train shape: %r", train.shape)
     logger.info("Test\n%r", test.head())
