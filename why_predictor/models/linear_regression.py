@@ -29,11 +29,21 @@ def fit(
 ) -> Tuple[Dict[str, Any], Any]:
     """Fit Linear Regression Model"""
     logger.debug("Calculating linear regression...")
-    linear_model = generate_model(train_features, train_output)
-    predictions = linear_model.predict(test_features)
-    logger.debug(
-        "Accuracy: %r", linear_model.score(test_features, test_output)
-    )
+    linear_model = generate_model(train_features, train_output.iloc[:, 1])
+    predictions = pd.DataFrame(linear_model.predict(test_features))
+    for i in range(1, test_output.shape[1]):
+        features = pd.concat([test_features.iloc[:, i:], predictions], axis=1)
+        features = features.set_axis(
+            [f"col{i}" for i in range(1, features.shape[1] + 1)], axis=1
+        )
+        predictions = pd.concat(
+            [predictions, pd.Series(linear_model.predict(features))], axis=1
+        )
+    predictions = predictions.set_axis(test_output.columns, axis=1)
+    # We cannot measure the Accuracy this way
+    # logger.debug(
+    #     "Accuracy: %r", linear_model.score(test_features, test_output)
+    # )
     error_metric = error.value(test_output, predictions, train_features)
     logger.info("%s linear regression:\n%r", error.name, error_metric)
     return {}, error_metric

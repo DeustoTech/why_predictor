@@ -17,10 +17,10 @@ from .load_sets import (
     split_dataset_in_train_and_test,
 )
 from .models import (
-    multioutput_knn_regression,
-    multioutput_linear_regression,
-    multioutput_random_forest_regression,
-    multioutput_tree_regression,
+    knn_regression,
+    linear_regression,
+    random_forest_regression,
+    tree_regression,
 )
 
 logging.basicConfig(
@@ -111,7 +111,7 @@ def execute(args: argparse.Namespace) -> None:
         data, args.train_test_ratio, args.num_features
     )
     # Linear regression
-    multioutput_linear_regression.fit(
+    linear_regression.fit(
         train_features,
         train_output,
         test_features,
@@ -119,7 +119,7 @@ def execute(args: argparse.Namespace) -> None:
         ErrorType[args.error_type],
     )
     # KNN regression
-    multioutput_knn_regression.fit(
+    knn_regression.fit(
         train_features,
         train_output,
         test_features,
@@ -127,7 +127,7 @@ def execute(args: argparse.Namespace) -> None:
         ErrorType[args.error_type],
     )
     # Decision Tree regression
-    multioutput_tree_regression.fit(
+    tree_regression.fit(
         train_features,
         train_output,
         test_features,
@@ -135,7 +135,7 @@ def execute(args: argparse.Namespace) -> None:
         ErrorType[args.error_type],
     )
     # Random Forest Regression
-    multioutput_random_forest_regression.fit(
+    random_forest_regression.fit(
         train_features,
         train_output,
         test_features,
