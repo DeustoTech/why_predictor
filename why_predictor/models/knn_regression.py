@@ -32,6 +32,6 @@ def fit(
     knn_model = generate_model(train_features, train_output)
     predictions = knn_model.predict(test_features)
     logger.debug("Accuracy: %r", knn_model.score(test_features, test_output))
-    error_metric = error.value(test_output, predictions)
+    error_metric = error.value(test_output, predictions, train_features)
     logger.info("%s KNN regression:\n%r", error.name, error_metric)
     return {}, error_metric

@@ -34,6 +34,6 @@ def fit(
     logger.debug(
         "Accuracy: %r", linear_model.score(test_features, test_output)
     )
-    error_metric = error.value(test_output, predictions)
+    error_metric = error.value(test_output, predictions, train_features)
     logger.info("%s linear regression:\n%r", error.name, error_metric)
     return {}, error_metric

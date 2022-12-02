@@ -34,6 +34,6 @@ def fit(
     logger.debug(
         "Accuracy: %r", random_forest_model.score(test_features, test_output)
     )
-    error_metric = error.value(test_output, predictions)
+    error_metric = error.value(test_output, predictions, train_features)
     logger.info("%s Random Forest regression:\n%r", error.name, error_metric)
     return {}, error_metric
