@@ -1,6 +1,7 @@
 """ WHY predictor
 """
 import argparse
+import json
 import logging
 import os
 import sys
@@ -15,12 +16,7 @@ from .load_sets import (
     select_training_set,
     split_dataset_in_train_and_test,
 )
-from .models import (
-    DecissionTreeRegressionModel,
-    KNNRegressionModel,
-    LinearRegressionModel,
-    RandomForestRegressionModel,
-)
+from .models import Models
 
 logging.basicConfig(
     stream=sys.stdout,
@@ -66,6 +62,17 @@ def generate_parser() -> argparse.ArgumentParser:
         + "(1 - this value will be used for testing)",
     )
     parser.add_argument(
+        "--use-models",
+        dest="models",
+        choices=[f"{e.name}" for e in Models],
+        nargs="+",
+        type=str.upper,
+        default=json.loads(os.getenv("MODELS")),
+        help="Select what models to use ["
+        + ", ".join([f"{e.name} ({e.value.name})" for e in Models])
+        + "]",
+    )
+    parser.add_argument(
         "--error-type",
         dest="error_type",
         choices=["MAPE", "MAE", "RMSE", "SMAPE"],
@@ -109,26 +116,12 @@ def execute(args: argparse.Namespace) -> None:
     ) = split_dataset_in_train_and_test(
         data, args.train_test_ratio, args.num_features
     )
-    # Linear regression
-    LinearRegressionModel(train_features, train_output).fit(
-        test_features,
-        test_output,
-    )
-    # KNN regression
-    KNNRegressionModel(train_features, train_output).fit(
-        test_features,
-        test_output,
-    )
-    # Decision Tree regression
-    DecissionTreeRegressionModel(train_features, train_output).fit(
-        test_features,
-        test_output,
-    )
-    # Random Forest Regression
-    RandomForestRegressionModel(train_features, train_output).fit(
-        test_features,
-        test_output,
-    )
+    # Calculate models
+    for model_name in args.models:
+        Models[model_name].value(train_features, train_output).fit(
+            test_features,
+            test_output,
+        )
 
 
 def main() -> None:
@@ -142,7 +135,6 @@ def main() -> None:
     if args.verbose:
         logger.setLevel(logging.DEBUG)
 
-    print(args)
     logger.debug("Args: %r", args)
     execute(args)
 
