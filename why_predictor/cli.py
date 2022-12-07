@@ -10,6 +10,7 @@ from pathlib import Path
 import argcomplete  # type: ignore
 from dotenv import load_dotenv
 
+from .errors import ErrorType
 from .load_sets import (
     find_csv_files,
     load_files,
@@ -118,7 +119,9 @@ def execute(args: argparse.Namespace) -> None:
     )
     # Calculate models
     for model_name in args.models:
-        Models[model_name].value(train_features, train_output).fit(
+        Models[model_name].value(
+            train_features, train_output, ErrorType[args.error_type]
+        ).fit(
             test_features,
             test_output,
         )
