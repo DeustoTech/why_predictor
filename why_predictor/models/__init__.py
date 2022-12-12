@@ -1,6 +1,7 @@
 """Models"""
 from enum import Enum
 
+from .abstract_model import BasicModel
 from .knn_regression import KNNRegressor, MultioutputKNNRegressor
 from .linear_regression import LinearRegressor, MultioutputLinearRegressor
 from .random_forest_regression import MultioutputRFRegressor, RFRegressor
@@ -21,3 +22,9 @@ class Models(Enum):
     MULTI_RF = MultioutputRFRegressor
     MULTI_KNN = MultioutputKNNRegressor
     MULTI_DT = MultioutputDecissionTreeRegressor
+
+
+__all__ = [
+    "BasicModel",
+    "Models",
+]

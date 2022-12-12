@@ -6,6 +6,7 @@ import logging
 import os
 import sys
 from pathlib import Path
+from typing import Dict
 
 import argcomplete  # type: ignore
 from dotenv import load_dotenv
@@ -17,7 +18,7 @@ from .load_sets import (
     select_training_set,
     split_dataset_in_train_and_test,
 )
-from .models import Models
+from .models import BasicModel, Models
 
 logging.basicConfig(
     stream=sys.stdout,
@@ -62,13 +63,14 @@ def generate_parser() -> argparse.ArgumentParser:
         help="ratio of samples used for training "
         + "(1 - this value will be used for testing)",
     )
+    models = os.getenv("MODELS")
     parser.add_argument(
         "--use-models",
         dest="models",
         choices=[f"{e.name}" for e in Models],
         nargs="+",
         type=str.upper,
-        default=json.loads(os.getenv("MODELS")),
+        default=json.loads(models) if models else "LR",
         help="Select what models to use ["
         + ", ".join([f"{e.name} ({e.value.name})" for e in Models])
         + "]",
@@ -128,20 +130,28 @@ def select_hyperparameters(args: argparse.Namespace) -> None:
             test_output,
         )
     # Create errors and hyperparameters directory
-    if not os.path.exists('errors'):
-        os.makedirs('errors')
-    if not os.path.exists('hyperparameters'):
-        os.makedirs('hyperparameters')
+    if not os.path.exists("errors"):
+        os.makedirs("errors")
+    if not os.path.exists("hyperparameters"):
+        os.makedirs("hyperparameters")
     # Save errors and hyperparameters
+    save_errors_and_hyperparameters(models_dict, args.error_type)
+
+
+def save_errors_and_hyperparameters(
+    models_dict: Dict[str, BasicModel], error_name: str
+):
+    """Save errors as CSV files and export best hyperparameter set as a JSON
+    file"""
     for model_name, model in models_dict.items():
         for hyperparams in model.hyper_params.values():
-            name = f"{model_name}_{args.error_type}_{hyperparams['name']}"
+            name = f"{model_name}_{error_name}_{hyperparams['name']}"
             # Export errors to CSV
-            hyperparams['errors'].to_csv(f"errors/{name}.csv", index=False)
+            hyperparams["errors"].to_csv(f"errors/{name}.csv", index=False)
             # Exports hyperparams to file
             filename = f"hyperparameters/{model_name}.json"
-            with open(filename, 'w', encoding='utf8') as fhyper:
-                fhyper.write(hyperparams['name'])
+            with open(filename, "w", encoding="utf8") as fhyper:
+                fhyper.write(hyperparams["name"])
 
 
 def main() -> None:
