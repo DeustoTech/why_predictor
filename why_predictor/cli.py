@@ -179,7 +179,7 @@ def _save_errors_and_hyperparameters(
 
 def generate_fforma(
     series: Dict[str, List[str]], args: argparse.Namespace
-) -> None:
+) -> pd.DataFrame:
     """Generate FFORMA ensemble"""
     (
         train_features,

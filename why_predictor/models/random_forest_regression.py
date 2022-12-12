@@ -7,6 +7,7 @@ from sklearn.ensemble import RandomForestRegressor  # type: ignore
 
 from ..errors import ErrorType
 from .abstract_model import BasicModel, ChainedModel, MultioutputModel
+from .utils import generate_hyperparams_from_keys
 
 logger = logging.getLogger("logger")
 
@@ -88,30 +89,8 @@ class RandomForestRegressionModel(BasicModel):
         keys: List[RFHyperParamKeys] = cast(
             List[RFHyperParamKeys], list(self.__params.keys())
         )
-        hyperparams = self.__generate_hyperparams({}, keys)
+        hyperparams = generate_hyperparams_from_keys(self.__params, {}, keys)
         self.generate_hyperparams_objects(hyperparams)
-
-    def __generate_hyperparams(
-        self,
-        current_set: Dict[str, Any],
-        hyperparams: List[RFHyperParamKeys],
-    ) -> List[Dict[str, Any]]:
-        if hyperparams:
-            hyperparam = hyperparams.pop(0)
-            hyperparam_sets = []
-            values = self.__params[hyperparam]
-            if hyperparam == "oob_score":
-                values = self.__params[hyperparam][
-                    str(current_set["bootstrap"])
-                ]
-            for value in values:
-                my_set = current_set.copy()
-                my_set[hyperparam] = value
-                hyperparam_sets.extend(
-                    self.__generate_hyperparams(my_set, hyperparams[:])
-                )
-            return hyperparam_sets
-        return [current_set]
 
 
 class RFRegressor(RandomForestRegressionModel, ChainedModel):
