@@ -1,9 +1,11 @@
 """Linear Regression model"""
 import logging
-from typing import Any, Dict, List, TypedDict
+from typing import Any, Dict, List, Optional, TypedDict
 
+import pandas as pd  # type: ignore
 from sklearn.neighbors import KNeighborsRegressor  # type: ignore
 
+from ..errors import ErrorType
 from .abstract_model import BasicModel, ChainedModel, MultioutputModel
 
 logger = logging.getLogger("logger")
@@ -36,13 +38,23 @@ class KNNRegressionModel(BasicModel):
         "p": [1, 2],
     }
 
+    def __init__(
+        self,
+        train_features: pd.DataFrame,
+        train_output: pd.DataFrame,
+        error_type: ErrorType,
+        params: Optional[KNNHyperParams] = None,
+    ):
+        super().__init__(train_features, train_output, error_type)
+        self.__params = params if params else self.params
+
     def generate_hyperparams(self) -> None:
         """Generate hyperparams"""
         hyperparams = []
-        for n_neighbors in self.params["n_neighbors"]:
-            for algorithm in self.params["algorithm"]:
-                for leaf_size in self.params["leaf_size"][algorithm]:
-                    for power in self.params["p"]:
+        for n_neighbors in self.__params["n_neighbors"]:
+            for algorithm in self.__params["algorithm"]:
+                for leaf_size in self.__params["leaf_size"][algorithm]:
+                    for power in self.__params["p"]:
                         hyperparams.append(
                             {
                                 "n_neighbors": n_neighbors,
@@ -58,6 +70,7 @@ class KNNRegressor(KNNRegressionModel, ChainedModel):
     """Chained KNN Regressor"""
 
     name = "KNN Regression"
+    short_name = "KNN"
 
     def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
         """Generate model"""
@@ -74,6 +87,7 @@ class MultioutputKNNRegressor(KNNRegressionModel, MultioutputModel):
     """Multioutput KNN Regressor"""
 
     name = "Multioutput KNN Regression"
+    short_name = "Multi_KNN"
 
     def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
         """Generate model"""

@@ -25,6 +25,7 @@ class BasicModel(ABC):
     """Models must define these methods and properties"""
 
     name: str
+    short_name: str
 
     def __init__(
         self,
@@ -88,7 +89,7 @@ class BasicModel(ABC):
             self.hyper_params.values(), key=lambda x: x["median"]
         )[0]
         logger.debug(
-            "Best hyper params set: %s => %f",
+            "Best hyper params set: '%s' => %f",
             self.fitted["name"],
             self.fitted["median"],
         )

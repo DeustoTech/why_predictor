@@ -128,3 +128,21 @@ def split_dataset_in_train_and_test(
     test_features = test.iloc[:, : num_features + 1]
     test_output = test.drop(test.iloc[:, 1 : num_features + 1], axis=1)
     return (train_features, train_output, test_features, test_output)
+
+
+def get_train_and_test_datasets(
+    series: Dict[str, List[str]],
+    percentage: float,
+    num_features: int,
+    num_predictions: int,
+    train_test_ratio: float,
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Generate train and test datasets"""
+    # Select training set
+    training_set, _ = select_training_set(series, percentage)
+    # Load training set
+    data = load_files(training_set, num_features, num_predictions)
+    # Train and test datasets
+    return split_dataset_in_train_and_test(
+        data, train_test_ratio, num_features
+    )

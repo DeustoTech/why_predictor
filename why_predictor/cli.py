@@ -6,18 +6,14 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Union
 
 import argcomplete  # type: ignore
+import pandas as pd  # type: ignore
 from dotenv import load_dotenv
 
 from .errors import ErrorType
-from .load_sets import (
-    find_csv_files,
-    load_files,
-    select_training_set,
-    split_dataset_in_train_and_test,
-)
+from .load_sets import find_csv_files, get_train_and_test_datasets
 from .models import BasicModel, Models
 
 logging.basicConfig(
@@ -134,20 +130,17 @@ def select_hyperparameters(
     series: Dict[str, List[str]], args: argparse.Namespace
 ) -> None:
     """Execute"""
-    # Select training set
-    training_set, _ = select_training_set(
-        series, args.training_percentage_hyperparams
-    )
-    # Load training set
-    data = load_files(training_set, args.num_features, args.num_predictions)
-    # Train and test datasets
     (
         train_features,
         train_output,
         test_features,
         test_output,
-    ) = split_dataset_in_train_and_test(
-        data, args.train_test_ratio_hyperparams, args.num_features
+    ) = get_train_and_test_datasets(
+        series,
+        args.training_percentage_hyperparams,
+        args.num_features,
+        args.num_predictions,
+        args.train_test_ratio_hyperparams,
     )
     # Calculate models
     models_dict = {}
@@ -165,10 +158,10 @@ def select_hyperparameters(
     if not os.path.exists("hyperparameters"):
         os.makedirs("hyperparameters")
     # Save errors and hyperparameters
-    save_errors_and_hyperparameters(models_dict, args.error_type)
+    _save_errors_and_hyperparameters(models_dict, args.error_type)
 
 
-def save_errors_and_hyperparameters(
+def _save_errors_and_hyperparameters(
     models_dict: Dict[str, BasicModel], error_name: str
 ) -> None:
     """Save errors as CSV files and export best hyperparameter set as a JSON
@@ -182,6 +175,88 @@ def save_errors_and_hyperparameters(
             filename = f"hyperparameters/{model_name}.json"
             with open(filename, "w", encoding="utf8") as fhyper:
                 fhyper.write(hyperparams["name"])
+
+
+def generate_fforma(
+    series: Dict[str, List[str]], args: argparse.Namespace
+) -> None:
+    """Generate FFORMA ensemble"""
+    (
+        train_features,
+        train_output,
+        test_features,
+        test_output,
+    ) = get_train_and_test_datasets(
+        series,
+        args.training_percentage_fforma,
+        args.num_features,
+        args.num_predictions,
+        args.train_test_ratio_fforma,
+    )
+    # Calculate models
+    models_dict = _load_models_dict(
+        args, train_features, train_output, test_features, test_output
+    )
+    # Generate FFORMA dataset
+    timeseries_dict = _generate_timeseries_dict(models_dict)
+    column_names: List[Union[str, float]] = ["timeseries"]
+    column_names.extend(["c1", "c2", "c3"])  # TODO to be decided
+    column_names.extend([m.short_name for m in models_dict.values()])
+    df_fforma = pd.DataFrame(columns=column_names)
+    for timeseries_id, timeseries in timeseries_dict.items():
+        row_data: List[Union[str, float]] = [timeseries_id, "X", "X", "X"]
+        row_data.extend(timeseries.values())
+        df_fforma = pd.concat(
+            [pd.DataFrame([row_data], columns=df_fforma.columns), df_fforma],
+            ignore_index=True,
+        )
+    df_fforma.to_csv("fforma.csv", index=False)
+    return df_fforma
+
+
+def _load_models_dict(
+    args: argparse.Namespace,
+    train_features: pd.DataFrame,
+    train_output: pd.DataFrame,
+    test_features: pd.DataFrame,
+    test_output: pd.DataFrame,
+) -> Dict[str, BasicModel]:
+    models_dict = {}
+    for model_name in args.models:
+        filename = f"hyperparameters/{model_name}.json"
+        try:
+            with open(filename, encoding="utf8") as fhyper:
+                hyperparameters = json.loads(fhyper.read())
+        except FileNotFoundError:
+            logger.error("File '%s' not found. Aborting...", filename)
+            sys.exit(1)
+        models_dict[model_name] = Models[model_name].value(
+            train_features,
+            train_output,
+            ErrorType[args.error_type],
+            hyperparameters,
+        )
+        models_dict[model_name].fit(
+            test_features,
+            test_output,
+        )
+    return models_dict
+
+
+def _generate_timeseries_dict(
+    models_dict: Dict[str, BasicModel]
+) -> Dict[str, Dict[str, float]]:
+    timeseries_dict: Dict[str, Dict[str, float]] = {}
+    for model in models_dict.values():
+        for timeseries, error_metric in model.fitted["errors"].groupby(
+            "timeseries"
+        ):
+            if timeseries not in timeseries_dict:
+                timeseries_dict[timeseries] = {}
+            timeseries_dict[timeseries][model.short_name] = (
+                error_metric.drop("timeseries", axis=1).stack().median()
+            )
+    return timeseries_dict
 
 
 def main() -> None:
@@ -199,7 +274,12 @@ def main() -> None:
     series = find_csv_files(args.dataset_basepath, args.dataset_dir_name)
     # Execute select_hyperparameters if mode is [generate-errors or full]
     if args.mode != "generate-fforma":
+        logger.info("* Selecting best hyperparameters...")
         select_hyperparameters(series, args)
+    # Execute select_fforma if mode is [generate-fforma or full]
+    if args.mode != "generate-errors":
+        logger.info("* Generating FFORMA...")
+        generate_fforma(series, args)
 
 
 if __name__ == "__main__":

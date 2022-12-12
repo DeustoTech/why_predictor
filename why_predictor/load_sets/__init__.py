@@ -2,6 +2,7 @@
 from .loading_functions import (
     find_csv_files,
     get_datasets,
+    get_train_and_test_datasets,
     load_files,
     select_training_set,
     split_dataset_in_train_and_test,
@@ -13,4 +14,5 @@ __all__ = [
     "select_training_set",
     "load_files",
     "split_dataset_in_train_and_test",
+    "get_train_and_test_datasets",
 ]

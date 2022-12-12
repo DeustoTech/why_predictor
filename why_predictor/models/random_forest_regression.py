@@ -1,9 +1,11 @@
 """Random Forest Regression model"""
 import logging
-from typing import Any, Dict, List, Literal, TypedDict, Union, cast
+from typing import Any, Dict, List, Literal, Optional, TypedDict, Union, cast
 
+import pandas as pd  # type: ignore
 from sklearn.ensemble import RandomForestRegressor  # type: ignore
 
+from ..errors import ErrorType
 from .abstract_model import BasicModel, ChainedModel, MultioutputModel
 
 logger = logging.getLogger("logger")
@@ -71,10 +73,20 @@ class RandomForestRegressionModel(BasicModel):
         "ccp_alpha": [0.0],
     }
 
+    def __init__(
+        self,
+        train_features: pd.DataFrame,
+        train_output: pd.DataFrame,
+        error_type: ErrorType,
+        params: Optional[RFHyperParams] = None,
+    ):
+        super().__init__(train_features, train_output, error_type)
+        self.__params = params if params else self.params
+
     def generate_hyperparams(self) -> None:
         """Generate hyperparams"""
         keys: List[RFHyperParamKeys] = cast(
-            List[RFHyperParamKeys], list(self.params.keys())
+            List[RFHyperParamKeys], list(self.__params.keys())
         )
         hyperparams = self.__generate_hyperparams({}, keys)
         self.generate_hyperparams_objects(hyperparams)
@@ -87,9 +99,11 @@ class RandomForestRegressionModel(BasicModel):
         if hyperparams:
             hyperparam = hyperparams.pop(0)
             hyperparam_sets = []
-            values = self.params[hyperparam]
+            values = self.__params[hyperparam]
             if hyperparam == "oob_score":
-                values = self.params[hyperparam][str(current_set["bootstrap"])]
+                values = self.__params[hyperparam][
+                    str(current_set["bootstrap"])
+                ]
             for value in values:
                 my_set = current_set.copy()
                 my_set[hyperparam] = value
@@ -104,6 +118,7 @@ class RFRegressor(RandomForestRegressionModel, ChainedModel):
     """Random Forest Regressor"""
 
     name = "Random Forest Regression"
+    short_name = "RF"
 
     def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
         """Generate model"""
@@ -119,6 +134,7 @@ class MultioutputRFRegressor(RandomForestRegressionModel, MultioutputModel):
     """Multioutput Random Forest Regressor"""
 
     name = "Multioutput Random Forest Regression"
+    short_name = "Multi_RF"
 
     def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
         """Generate model"""

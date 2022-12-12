@@ -1,9 +1,11 @@
 """Decission Tree Regression model"""
 import logging
-from typing import Any, Dict, List, Literal, TypedDict, Union, cast
+from typing import Any, Dict, List, Literal, Optional, TypedDict, Union, cast
 
+import pandas as pd  # type: ignore
 from sklearn.tree import DecisionTreeRegressor  # type: ignore
 
+from ..errors import ErrorType
 from .abstract_model import BasicModel, ChainedModel, MultioutputModel
 
 logger = logging.getLogger("logger")
@@ -62,10 +64,20 @@ class DecissionTreeRegressionModel(BasicModel):
         "ccp_alpha": [0.0, 0.5],
     }
 
+    def __init__(
+        self,
+        train_features: pd.DataFrame,
+        train_output: pd.DataFrame,
+        error_type: ErrorType,
+        params: Optional[DTHyperParams] = None,
+    ):
+        super().__init__(train_features, train_output, error_type)
+        self.__params = params if params else self.params
+
     def generate_hyperparams(self) -> None:
         """Generate hyperparams"""
         keys: List[DTHyperParamKeys] = cast(
-            List[DTHyperParamKeys], list(self.params.keys())
+            List[DTHyperParamKeys], list(self.__params.keys())
         )
         hyperparams = self.__generate_hyperparams({}, keys)
         self.generate_hyperparams_objects(hyperparams)
@@ -78,7 +90,7 @@ class DecissionTreeRegressionModel(BasicModel):
         if hyperparams:
             hyperparam = hyperparams.pop(0)
             hyperparam_sets = []
-            for value in self.params[hyperparam]:
+            for value in self.__params[hyperparam]:
                 my_set = current_set.copy()
                 my_set[hyperparam] = value
                 hyperparam_sets.extend(
@@ -92,6 +104,7 @@ class DecissionTreeRegressor(DecissionTreeRegressionModel, ChainedModel):
     """Decission Tree Regression Class"""
 
     name = "Decission Tree Regression"
+    short_name = "DT"
 
     def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
         """Generate model"""
@@ -109,6 +122,7 @@ class MultioutputDecissionTreeRegressor(
     """Decission Tree Regression Class"""
 
     name = "Multioutput Decission Tree Regression"
+    short_name = "Multi_DT"
 
     def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
         """Generate model"""
