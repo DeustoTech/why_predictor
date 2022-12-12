@@ -96,7 +96,10 @@ class DecissionTreeRegressor(DecissionTreeRegressionModel, ChainedModel):
     def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
         """Generate model"""
         model = DecisionTreeRegressor(**hyper_params)
-        dt_model = model.fit(self.train_features, self.train_output.iloc[:, 1])
+        dt_model = model.fit(
+            self.train_features.drop("timeseries", axis=1),
+            self.train_output.iloc[:, 1],
+        )
         return dt_model
 
 
@@ -110,5 +113,8 @@ class MultioutputDecissionTreeRegressor(
     def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
         """Generate model"""
         model = DecisionTreeRegressor(**hyper_params)
-        multi_dt_model = model.fit(self.train_features, self.train_output)
+        multi_dt_model = model.fit(
+            self.train_features.drop("timeseries", axis=1),
+            self.train_output.drop("timeseries", axis=1),
+        )
         return multi_dt_model

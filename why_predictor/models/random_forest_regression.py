@@ -109,7 +109,8 @@ class RFRegressor(RandomForestRegressionModel, ChainedModel):
         """Generate model"""
         model = RandomForestRegressor(**hyper_params, n_jobs=-1)
         random_forest_model = model.fit(
-            self.train_features, self.train_output.iloc[:, 1]
+            self.train_features.drop("timeseries", axis=1),
+            self.train_output.iloc[:, 1],
         )
         return random_forest_model
 
@@ -123,6 +124,7 @@ class MultioutputRFRegressor(RandomForestRegressionModel, MultioutputModel):
         """Generate model"""
         model = RandomForestRegressor(**hyper_params, n_jobs=-1)
         multi_rf_linear_model = model.fit(
-            self.train_features, self.train_output
+            self.train_features.drop("timeseries", axis=1),
+            self.train_output.drop("timeseries", axis=1),
         )
         return multi_rf_linear_model

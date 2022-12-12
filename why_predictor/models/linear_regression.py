@@ -29,7 +29,8 @@ class LinearRegressor(LinearRegressionModel, ChainedModel):
         # We train with only the column for the first hour
         model = LinearRegression(**hyper_params, n_jobs=-1)
         linear_model = model.fit(
-            self.train_features, self.train_output.iloc[:, 1]
+            self.train_features.drop("timeseries", axis=1),
+            self.train_output.iloc[:, 1],
         )
         return linear_model
 
@@ -42,5 +43,8 @@ class MultioutputLinearRegressor(LinearRegressionModel, MultioutputModel):
     def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
         """Generate model"""
         model = LinearRegression(**hyper_params, n_jobs=-1)
-        multi_linear_model = model.fit(self.train_features, self.train_output)
+        multi_linear_model = model.fit(
+            self.train_features.drop("timeseries", axis=1),
+            self.train_output.drop("timeseries", axis=1),
+        )
         return multi_linear_model

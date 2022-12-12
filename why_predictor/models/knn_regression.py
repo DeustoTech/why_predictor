@@ -64,7 +64,8 @@ class KNNRegressor(KNNRegressionModel, ChainedModel):
         # We train with only the column for the first hour
         model = KNeighborsRegressor(**hyper_params, n_jobs=-1)
         knn_model = model.fit(
-            self.train_features, self.train_output.iloc[:, 1]
+            self.train_features.drop("timeseries", axis=1),
+            self.train_output.iloc[:, 1],
         )
         return knn_model
 
@@ -77,5 +78,8 @@ class MultioutputKNNRegressor(KNNRegressionModel, MultioutputModel):
     def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
         """Generate model"""
         model = KNeighborsRegressor(**hyper_params, n_jobs=-1)
-        multi_knn_model = model.fit(self.train_features, self.train_output)
+        multi_knn_model = model.fit(
+            self.train_features.drop("timeseries", axis=1),
+            self.train_output.drop("timeseries", axis=1),
+        )
         return multi_knn_model

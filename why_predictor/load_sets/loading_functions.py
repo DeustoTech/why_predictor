@@ -83,12 +83,20 @@ def load_files(
                 .reset_index()
                 .reindex(columns=data.columns)
             )
+            # Timeseries name
+            timeseries_name = os.path.splitext(os.path.split(filename)[-1])[0]
             # Generate rolling window values
             for i in range(len(data) - total_window):
-                matrix.append(list(data["kWh"][i : i + total_window]))
+                matrix.append(
+                    [timeseries_name, *list(data["kWh"][i : i + total_window])]
+                )
     logger.debug("Generating DataFrame...")
     data = pd.DataFrame(
-        matrix, columns=[f"col{i}" for i in range(1, total_window + 1)]
+        matrix,
+        columns=[
+            "timeseries",
+            *[f"col{i}" for i in range(1, total_window + 1)],
+        ],
     )
     logger.info("CSV files loaded.")
     return data
@@ -99,16 +107,24 @@ def split_dataset_in_train_and_test(
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Split the dataset in train and test"""
     logger.info("Generating train and test sets...")
-    limit = int(len(data) * train_ratio)
-    train = data.iloc[:limit]
-    test = data.iloc[limit:].reset_index(drop=True)
+    mydict = dict(tuple(data.groupby("timeseries")))
+    train_dict = {}
+    test_dict = {}
+    for timeseries in mydict:
+        dataset = mydict[timeseries]
+        limit = int(len(dataset) * train_ratio)
+        train_dict[timeseries] = dataset.iloc[:limit]
+        test_dict[timeseries] = dataset.iloc[limit:]
+        # .reset_index(drop=True)
+    train = pd.concat(train_dict.values(), ignore_index=True)
+    test = pd.concat(test_dict.values(), ignore_index=True)
     logger.info("Train\n%r", train.head())
     logger.info("Train shape: %r", train.shape)
     logger.info("Test\n%r", test.head())
     logger.info("Test shape: %r", test.shape)
     logger.info(test.shape)
-    train_features = train.iloc[:, :num_features]
-    train_output = train.iloc[:, num_features:]
-    test_features = test.iloc[:, :num_features]
-    test_output = test.iloc[:, num_features:]
+    train_features = train.iloc[:, : num_features + 1]
+    train_output = train.drop(train.iloc[:, 1 : num_features + 1], axis=1)
+    test_features = test.iloc[:, : num_features + 1]
+    test_output = test.drop(test.iloc[:, 1 : num_features + 1], axis=1)
     return (train_features, train_output, test_features, test_output)

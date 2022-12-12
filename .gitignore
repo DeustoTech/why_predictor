@@ -12,6 +12,8 @@ __pycache__/
 # Own
 envwhy/
 disk/
+errors/
+hyperparameters/
 
 # Distribution / packaging
 .Python

@@ -106,8 +106,12 @@ class ChainedModel(BasicModel):
         """Calculate errors for a hyper param set"""
         hyperparams = self.hyper_params[hyperparams_set]
         logger.debug("Hyper params set: %s", hyperparams["name"])
-        predictions = pd.DataFrame(hyperparams["model"].predict(test_features))
-        for i in range(1, test_output.shape[1]):
+        predictions = pd.DataFrame(
+            hyperparams["model"].predict(
+                test_features.drop("timeseries", axis=1)
+            )
+        )
+        for i in range(2, test_output.shape[1]):
             # We generate a new features vector, removing first columns and
             # adding the already predicted values as features
             # 1 2 [3 4 5 6 7 ... 70 71 72 P1 P2]
@@ -124,17 +128,19 @@ class ChainedModel(BasicModel):
                 ],
                 axis=1,
             )
+        predictions.insert(0, "timeseries", test_features["timeseries"])
         self.predictions = predictions.set_axis(test_output.columns, axis=1)
         # Calculate errors
         error_metric = self.error_type.value(
             test_output, self.predictions, self.train_features
         )
-        hyperparams["errors"] = error_metric
         hyperparams["median"] = error_metric.stack().median()
+        error_metric.insert(0, "timeseries", test_features["timeseries"])
+        hyperparams["errors"] = error_metric
         logger.info(
             "%s %s: %r", self.error_type.name, self.name, hyperparams["median"]
         )
-        logger.debug(error_metric)
+        logger.debug("Error dataframe\n:%r", error_metric)
 
 
 class MultioutputModel(BasicModel):
@@ -149,16 +155,25 @@ class MultioutputModel(BasicModel):
         """Calculate errors for a hyper param set"""
         hyperparams = self.hyper_params[hyperparams_set]
         logger.debug("Hyper params set: %s", hyperparams["name"])
-        predictions = pd.DataFrame(hyperparams["model"].predict(test_features))
+        predictions = pd.DataFrame(
+            hyperparams["model"].predict(
+                test_features.drop("timeseries", axis=1)
+            )
+        )
+        predictions.insert(0, "timeseries", test_features["timeseries"])
         self.predictions = predictions.set_axis(test_output.columns, axis=1)
         logger.debug(
             "Accuracy: %r",
-            hyperparams["model"].score(test_features, test_output),
+            hyperparams["model"].score(
+                test_features.drop("timeseries", axis=1),
+                test_output.drop("timeseries", axis=1),
+            ),
         )
         # Calculate errors
         error_metric = self.error_type.value(
             test_output, self.predictions, self.train_features
         )
-        hyperparams["errors"] = error_metric
         hyperparams["median"] = error_metric.stack().median()
+        error_metric.insert(0, "timeseries", test_features["timeseries"])
+        hyperparams["errors"] = error_metric
         logger.info("%s %s: %r", self.error_type.name, self.name, error_metric)

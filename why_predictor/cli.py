@@ -99,7 +99,7 @@ def generate_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def execute(args: argparse.Namespace) -> None:
+def select_hyperparameters(args: argparse.Namespace) -> None:
     """Execute"""
     basepath = args.dataset_basepath
     dirname = args.dataset_dir_name
@@ -118,13 +118,30 @@ def execute(args: argparse.Namespace) -> None:
         data, args.train_test_ratio, args.num_features
     )
     # Calculate models
+    models_dict = {}
     for model_name in args.models:
-        Models[model_name].value(
+        models_dict[model_name] = Models[model_name].value(
             train_features, train_output, ErrorType[args.error_type]
-        ).fit(
+        )
+        models_dict[model_name].fit(
             test_features,
             test_output,
         )
+    # Create errors and hyperparameters directory
+    if not os.path.exists('errors'):
+        os.makedirs('errors')
+    if not os.path.exists('hyperparameters'):
+        os.makedirs('hyperparameters')
+    # Save errors and hyperparameters
+    for model_name, model in models_dict.items():
+        for hyperparams in model.hyper_params.values():
+            name = f"{model_name}_{args.error_type}_{hyperparams['name']}"
+            # Export errors to CSV
+            hyperparams['errors'].to_csv(f"errors/{name}.csv", index=False)
+            # Exports hyperparams to file
+            filename = f"hyperparameters/{model_name}.json"
+            with open(filename, 'w', encoding='utf8') as fhyper:
+                fhyper.write(hyperparams['name'])
 
 
 def main() -> None:
@@ -139,7 +156,7 @@ def main() -> None:
         logger.setLevel(logging.DEBUG)
 
     logger.debug("Args: %r", args)
-    execute(args)
+    select_hyperparameters(args)
 
 
 if __name__ == "__main__":
