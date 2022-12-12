@@ -6,7 +6,7 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List
 
 import argcomplete  # type: ignore
 from dotenv import load_dotenv
@@ -37,6 +37,18 @@ def generate_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("-v", "--verbose", action="store_true")
     parser.add_argument(
+        "-m",
+        "--mode",
+        dest="mode",
+        choices=["generate-errors", "generate-fforma", "full"],
+        default="full",
+        help="Select the operation mode, by default it will run in full mode"
+        + " that includes both generate-errors and generate fforma. "
+        + "generate-errors: will only train the models to generate the error "
+        + "files, while generate-fforma will assume the hyperparameters are "
+        + "already set, so it will generate the FFORMA model.",
+    )
+    parser.add_argument(
         "--base-path-dataset",
         dest="dataset_basepath",
         default=os.getenv("DATASET_BASEPATH"),
@@ -47,21 +59,6 @@ def generate_parser() -> argparse.ArgumentParser:
         dest="dataset_dir_name",
         default=os.getenv("DATASET_DIRNAME"),
         help="exact name of the directory containing the CSV files",
-    )
-    parser.add_argument(
-        "--percentage-csv-files-for-training",
-        dest="training_percentage",
-        type=float,
-        default=os.getenv("TRAINING_PERCENTAGE"),
-        help="Percentage of the CSV files that will be used for training",
-    )
-    parser.add_argument(
-        "--train-test-ratio",
-        dest="train_test_ratio",
-        type=float,
-        default=os.getenv("TRAIN_TEST_RATIO"),
-        help="ratio of samples used for training "
-        + "(1 - this value will be used for testing)",
     )
     models = os.getenv("MODELS")
     parser.add_argument(
@@ -97,17 +94,50 @@ def generate_parser() -> argparse.ArgumentParser:
         default=os.getenv("NUM_PREDICTIONS"),
         help="num of hours used as predictions",
     )
+    generate_errors = parser.add_argument_group("Generate Errors")
+    generate_errors.add_argument(
+        "--percentage-csv-files-for-training-hyperparameters",
+        dest="training_percentage_hyperparams",
+        type=float,
+        default=os.getenv("TRAINING_PERCENTAGE_HYPERPARAMETERS"),
+        help="Percentage of the CSV files that will be used for training",
+    )
+    generate_errors.add_argument(
+        "--train-test-ratio-hyperparameters",
+        dest="train_test_ratio_hyperparams",
+        type=float,
+        default=os.getenv("TRAIN_TEST_RATIO_HYPERPARAMETERS"),
+        help="ratio of samples used for training "
+        + "(1 - this value will be used for testing)",
+    )
+    generate_errors = parser.add_argument_group("Generate FFORMA")
+    generate_errors.add_argument(
+        "--percentage-csv-files-for-training-fforma",
+        dest="training_percentage_fforma",
+        type=float,
+        default=os.getenv("TRAINING_PERCENTAGE_FFORMA"),
+        help="Percentage of the CSV files that will be used for training",
+    )
+    generate_errors.add_argument(
+        "--train-test-ratio-fforma",
+        dest="train_test_ratio_fforma",
+        type=float,
+        default=os.getenv("TRAIN_TEST_RATIO_FFORMA"),
+        help="ratio of samples used for training "
+        + "(1 - this value will be used for testing)",
+    )
     argcomplete.autocomplete(parser)
     return parser
 
 
-def select_hyperparameters(args: argparse.Namespace) -> None:
+def select_hyperparameters(
+    series: Dict[str, List[str]], args: argparse.Namespace
+) -> None:
     """Execute"""
-    basepath = args.dataset_basepath
-    dirname = args.dataset_dir_name
-    series = find_csv_files(basepath, dirname)
     # Select training set
-    training_set, _ = select_training_set(series, args.training_percentage)
+    training_set, _ = select_training_set(
+        series, args.training_percentage_hyperparams
+    )
     # Load training set
     data = load_files(training_set, args.num_features, args.num_predictions)
     # Train and test datasets
@@ -117,7 +147,7 @@ def select_hyperparameters(args: argparse.Namespace) -> None:
         test_features,
         test_output,
     ) = split_dataset_in_train_and_test(
-        data, args.train_test_ratio, args.num_features
+        data, args.train_test_ratio_hyperparams, args.num_features
     )
     # Calculate models
     models_dict = {}
@@ -140,7 +170,7 @@ def select_hyperparameters(args: argparse.Namespace) -> None:
 
 def save_errors_and_hyperparameters(
     models_dict: Dict[str, BasicModel], error_name: str
-):
+) -> None:
     """Save errors as CSV files and export best hyperparameter set as a JSON
     file"""
     for model_name, model in models_dict.items():
@@ -166,7 +196,10 @@ def main() -> None:
         logger.setLevel(logging.DEBUG)
 
     logger.debug("Args: %r", args)
-    select_hyperparameters(args)
+    series = find_csv_files(args.dataset_basepath, args.dataset_dir_name)
+    # Execute select_hyperparameters if mode is [generate-errors or full]
+    if args.mode != "generate-fforma":
+        select_hyperparameters(series, args)
 
 
 if __name__ == "__main__":
