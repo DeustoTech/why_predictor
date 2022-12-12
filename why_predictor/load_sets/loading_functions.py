@@ -84,7 +84,10 @@ def load_files(
                 .reindex(columns=data.columns)
             )
             # Timeseries name
-            timeseries_name = os.path.splitext(os.path.split(filename)[-1])[0]
+            timeseries_name = (
+                f"{name}_"
+                + f"{os.path.splitext(os.path.split(filename)[-1])[0]}"
+            )
             # Generate rolling window values
             for i in range(len(data) - total_window):
                 matrix.append(
