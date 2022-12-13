@@ -4,6 +4,10 @@ from enum import Enum
 from .abstract_model import BasicModel
 from .knn_regression import KNNRegressor, MultioutputKNNRegressor
 from .linear_regression import LinearRegressor, MultioutputLinearRegressor
+from .mlp_regressor import (
+    MultiLayerPerceptronRegressor,
+    MultioutputMLPRegressor,
+)
 from .random_forest_regression import MultioutputRFRegressor, RFRegressor
 from .sgd_regressor import StochasticGradientDescentRegressor
 from .svm_regression import SupportVectorRegressor
@@ -22,10 +26,12 @@ class Models(Enum):
     DT = DecissionTreeRegressor
     SVR = SupportVectorRegressor
     SGD = StochasticGradientDescentRegressor
+    MLP = MultiLayerPerceptronRegressor
     MULTI_LR = MultioutputLinearRegressor
     MULTI_RF = MultioutputRFRegressor
     MULTI_KNN = MultioutputKNNRegressor
     MULTI_DT = MultioutputDecissionTreeRegressor
+    MULTI_MLP = MultioutputMLPRegressor
 
 
 __all__ = [
