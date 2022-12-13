@@ -21,7 +21,7 @@ SVRHyperParamKeys = Literal[
 
 
 class SVRHyperParams(TypedDict):
-    """KNN HyperParams type"""
+    """SVR HyperParams type"""
 
     epsilon: List[float]
     tol: List[float]

@@ -18,7 +18,7 @@ SGDHyperParamKeys = Literal[
 
 
 class SGDHyperParams(TypedDict):
-    """KNN HyperParams type"""
+    """SGD HyperParams type"""
 
     alpha: List[float]
 
