@@ -7,7 +7,7 @@ from sklearn.ensemble import RandomForestRegressor  # type: ignore
 
 from ..errors import ErrorType
 from .abstract_model import BasicModel, ChainedModel, MultioutputModel
-from .utils import generate_hyperparams_from_keys
+from .utils import generate_hyperparams_from_keys, sanitize_params
 
 logger = logging.getLogger("logger")
 
@@ -81,8 +81,8 @@ class RandomForestRegressionModel(BasicModel):
         error_type: ErrorType,
         params: Optional[RFHyperParams] = None,
     ):
+        self.__params = sanitize_params(params) if params else self.params
         super().__init__(train_features, train_output, error_type)
-        self.__params = params if params else self.params
 
     def generate_hyperparams(self) -> None:
         """Generate hyperparams"""

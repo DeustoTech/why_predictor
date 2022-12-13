@@ -7,6 +7,7 @@ from sklearn.neighbors import KNeighborsRegressor  # type: ignore
 
 from ..errors import ErrorType
 from .abstract_model import BasicModel, ChainedModel, MultioutputModel
+from .utils import sanitize_params
 
 logger = logging.getLogger("logger")
 
@@ -45,8 +46,8 @@ class KNNRegressionModel(BasicModel):
         error_type: ErrorType,
         params: Optional[KNNHyperParams] = None,
     ):
+        self.__params = sanitize_params(params) if params else self.params
         super().__init__(train_features, train_output, error_type)
-        self.__params = params if params else self.params
 
     def generate_hyperparams(self) -> None:
         """Generate hyperparams"""

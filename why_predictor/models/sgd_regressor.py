@@ -7,7 +7,7 @@ from sklearn.linear_model import SGDRegressor  # type: ignore
 
 from ..errors import ErrorType
 from .abstract_model import BasicModel, ChainedModel
-from .utils import generate_hyperparams_from_keys
+from .utils import generate_hyperparams_from_keys, sanitize_params
 
 logger = logging.getLogger("logger")
 
@@ -37,7 +37,7 @@ class SGDRegressionModel(BasicModel):
         error_type: ErrorType,
         params: Optional[SGDHyperParams] = None,
     ):
-        self.__params = params if params else self.params
+        self.__params = sanitize_params(params) if params else self.params
         super().__init__(train_features, train_output, error_type)
 
     def generate_hyperparams(self) -> None:

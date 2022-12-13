@@ -19,3 +19,11 @@ def generate_hyperparams_from_keys(
             )
         return hyperparam_sets
     return [current_set]
+
+
+def sanitize_params(params: Any) -> Any:
+    """Sanitize params as it is the optimal set, and the algorithm will expect
+    different options"""
+    for key in params:
+        params[key] = [params[key]]
+    return params
