@@ -25,11 +25,22 @@ logger = logging.getLogger("logger")
 load_dotenv(dotenv_path=Path("./config.env"))
 
 
+class CustomFormatter(argparse.HelpFormatter):
+    """Custom formatter to break lines in Help text preceded by #"""
+
+    def _split_lines(self, text, width):
+        if text.startswith("#"):
+            return text[1:].splitlines()
+        # this is the RawTextHelpFormatter._split_lines
+        return argparse.HelpFormatter._split_lines(self, text, width)
+
+
 def generate_parser() -> argparse.ArgumentParser:
     """Generate parser for command line arguments"""
     parser = argparse.ArgumentParser(
         prog="python -m why-predictor",
         description="WHY Predictor",
+        formatter_class=CustomFormatter,
     )
     parser.add_argument("-v", "--verbose", action="store_true")
     parser.add_argument(
@@ -64,9 +75,8 @@ def generate_parser() -> argparse.ArgumentParser:
         nargs="+",
         type=str.upper,
         default=json.loads(models) if models else "LR",
-        help="Select what models to use ["
-        + ", ".join([f"{e.name} ({e.value.name})" for e in Models])
-        + "]",
+        help="#Select what models to use:\n    "
+        + "\n    ".join([f"{e.name} ({e.value.name})" for e in Models]),
     )
     parser.add_argument(
         "--error-type",
