@@ -5,6 +5,7 @@ from .abstract_model import BasicModel
 from .knn_regression import KNNRegressor, MultioutputKNNRegressor
 from .linear_regression import LinearRegressor, MultioutputLinearRegressor
 from .random_forest_regression import MultioutputRFRegressor, RFRegressor
+from .sgd_regressor import StochasticGradientDescentRegressor
 from .svm_regression import SupportVectorRegressor
 from .tree_regression import (
     DecissionTreeRegressor,
@@ -20,6 +21,7 @@ class Models(Enum):
     KNN = KNNRegressor
     DT = DecissionTreeRegressor
     SVR = SupportVectorRegressor
+    SGD = StochasticGradientDescentRegressor
     MULTI_LR = MultioutputLinearRegressor
     MULTI_RF = MultioutputRFRegressor
     MULTI_KNN = MultioutputKNNRegressor
