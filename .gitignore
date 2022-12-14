@@ -12,9 +12,8 @@ __pycache__/
 # Own
 envwhy/
 disk/
-errors/
-hyperparameters/
-fforma.csv
+model-training/
+fforma-training/
 
 # Distribution / packaging
 .Python

@@ -1,8 +1,9 @@
 """Linear Regression model"""
+import os
 import json
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, TypedDict
+from typing import Any, Dict, List, Optional, TypedDict
 
 import pandas as pd  # type: ignore
 
@@ -79,7 +80,10 @@ class BasicModel(ABC):
         """Calculate errors for a hyper param set"""
 
     def fit(
-        self, test_features: pd.DataFrame, test_output: pd.DataFrame
+        self,
+        test_features: pd.DataFrame,
+        test_output: pd.DataFrame,
+        base_path: Optional[str] = None,
     ) -> None:
         """Generate predictions"""
         logger.debug("Calculating %s...", self.name)
@@ -93,6 +97,29 @@ class BasicModel(ABC):
             self.fitted["name"],
             self.fitted["median"],
         )
+        # Save errors and hyperparameters if base_path is set
+        if base_path:
+            self.save_errors(base_path)
+            self.save_best_hyperparameters(base_path)
+
+    def save_errors(self, base_path: str) -> None:
+        """Save errors"""
+        base_path = os.path.join(base_path, "errors")
+        if not os.path.exists(base_path):
+            os.makedirs(base_path)
+        for hyperparams in self.hyper_params.values():
+            name = f"{self.short_name}_{self.error_type}_{hyperparams['name']}"
+            filename = os.path.join(base_path, name)
+            hyperparams["errors"].to_csv(filename, index=False)
+
+    def save_best_hyperparameters(self, base_path: str) -> None:
+        """Save Best Hyper-parameters set"""
+        base_path = os.path.join(base_path, "hyperparameters")
+        if not os.path.exists(base_path):
+            os.makedirs(base_path)
+        filename = os.path.join(base_path, f"{self.short_name}.json")
+        with open(filename, "w", encoding="utf8") as fhyper:
+            fhyper.write(self.fitted["name"])
 
 
 class ChainedModel(BasicModel):

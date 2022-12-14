@@ -153,38 +153,14 @@ def select_hyperparameters(
         args.train_test_ratio_hyperparams,
     )
     # Calculate models
-    models_dict = {}
     for model_name in args.models:
-        models_dict[model_name] = Models[model_name].value(
+        Models[model_name].value(
             train_features, train_output, ErrorType[args.error_type]
-        )
-        models_dict[model_name].fit(
+        ).fit(
             test_features,
             test_output,
+            base_path="model-training"
         )
-    # Create errors and hyperparameters directory
-    if not os.path.exists("errors"):
-        os.makedirs("errors")
-    if not os.path.exists("hyperparameters"):
-        os.makedirs("hyperparameters")
-    # Save errors and hyperparameters
-    _save_errors_and_hyperparameters(models_dict, args.error_type)
-
-
-def _save_errors_and_hyperparameters(
-    models_dict: Dict[str, BasicModel], error_name: str
-) -> None:
-    """Save errors as CSV files and export best hyperparameter set as a JSON
-    file"""
-    for model_name, model in models_dict.items():
-        for hyperparams in model.hyper_params.values():
-            name = f"{model_name}_{error_name}_{hyperparams['name']}"
-            # Export errors to CSV
-            hyperparams["errors"].to_csv(f"errors/{name}.csv", index=False)
-            # Exports hyperparams to file
-            filename = f"hyperparameters/{model_name}.json"
-            with open(filename, "w", encoding="utf8") as fhyper:
-                fhyper.write(hyperparams["name"])
 
 
 def generate_fforma(
@@ -220,7 +196,9 @@ def generate_fforma(
             [pd.DataFrame([row_data], columns=df_fforma.columns), df_fforma],
             ignore_index=True,
         )
-    df_fforma.to_csv("fforma.csv", index=False)
+    if not os.path.exists("fforma-training"):
+        os.makedirs("fforma-training")
+    df_fforma.to_csv("fforma-training/fforma.csv", index=False)
     return df_fforma
 
 
@@ -233,7 +211,7 @@ def _load_models_dict(
 ) -> Dict[str, BasicModel]:
     models_dict = {}
     for model_name in args.models:
-        filename = f"hyperparameters/{model_name}.json"
+        filename = f"model-training/hyperparameters/{model_name}.json"
         try:
             with open(filename, encoding="utf8") as fhyper:
                 hyperparameters = json.loads(fhyper.read())
