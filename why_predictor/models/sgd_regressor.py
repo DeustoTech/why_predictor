@@ -4,9 +4,10 @@ from typing import Any, Dict, List, Literal, Optional, TypedDict, cast
 
 import pandas as pd  # type: ignore
 from sklearn.linear_model import SGDRegressor  # type: ignore
+from sklearn.multioutput import MultiOutputRegressor  # type: ignore
 
 from ..errors import ErrorType
-from .abstract_model import BasicModel, ChainedModel
+from .abstract_model import BasicModel, ChainedModel, MultioutputModel
 from .utils import generate_hyperparams_from_keys, sanitize_params
 
 logger = logging.getLogger("logger")
@@ -64,3 +65,19 @@ class StochasticGradientDescentRegressor(SGDRegressionModel, ChainedModel):
             self.train_output.iloc[:, 1],
         )
         return sgd_model
+
+
+class MultioutputSGDRegressor(SGDRegressionModel, MultioutputModel):
+    """Multioutput SGD Regressor"""
+
+    name = "Multioutput SGD Regression"
+    short_name = "Multi_SGD"
+
+    def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
+        """Generate model"""
+        model = MultiOutputRegressor(SGDRegressor(**hyper_params))
+        multi_knn_model = model.fit(
+            self.train_features.drop("timeseries", axis=1),
+            self.train_output.drop("timeseries", axis=1),
+        )
+        return multi_knn_model
