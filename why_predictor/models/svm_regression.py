@@ -67,7 +67,7 @@ class SupportVectorRegressor(SVMRegressionModel, ChainedModel):
     def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
         """Generate model"""
         # We train with only the column for the first hour
-        model = LinearSVR(**hyper_params, n_jobs=-1)
+        model = LinearSVR(**hyper_params, max_iter=10000)
         svr_model = model.fit(
             self.train_features.drop("timeseries", axis=1),
             self.train_output.iloc[:, 1],
