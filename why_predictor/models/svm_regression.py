@@ -4,9 +4,10 @@ from typing import Any, Dict, List, Literal, Optional, TypedDict, cast
 
 import pandas as pd  # type: ignore
 from sklearn.svm import LinearSVR  # type: ignore
+from sklearn.multioutput import MultiOutputRegressor  # type: ignore
 
 from ..errors import ErrorType
-from .abstract_model import BasicModel, ChainedModel
+from .abstract_model import BasicModel, ChainedModel, MultioutputModel
 from .utils import generate_hyperparams_from_keys, sanitize_params
 
 logger = logging.getLogger("logger")
@@ -73,3 +74,19 @@ class SupportVectorRegressor(SVMRegressionModel, ChainedModel):
             self.train_output.iloc[:, 1],
         )
         return svr_model
+
+
+class MultioutputSVMRegressor(SVMRegressionModel, MultioutputModel):
+    """Multioutput Support Vector Regressor"""
+
+    name = "Multioutput Support Vector Regression"
+    short_name = "Multi_SVR"
+
+    def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
+        """Generate model"""
+        model = MultiOutputRegressor(LinearSVR(**hyper_params, max_iter=10000))
+        multi_knn_model = model.fit(
+            self.train_features.drop("timeseries", axis=1),
+            self.train_output.drop("timeseries", axis=1),
+        )
+        return multi_knn_model

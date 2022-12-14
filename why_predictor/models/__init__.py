@@ -10,7 +10,7 @@ from .mlp_regressor import (
 )
 from .random_forest_regression import MultioutputRFRegressor, RFRegressor
 from .sgd_regressor import StochasticGradientDescentRegressor
-from .svm_regression import SupportVectorRegressor
+from .svm_regression import SupportVectorRegressor, MultioutputSVMRegressor
 from .tree_regression import (
     DecissionTreeRegressor,
     MultioutputDecissionTreeRegressor,
@@ -31,6 +31,7 @@ class Models(Enum):
     MULTI_RF = MultioutputRFRegressor
     MULTI_KNN = MultioutputKNNRegressor
     MULTI_DT = MultioutputDecissionTreeRegressor
+    MULTI_SVR = MultioutputSVMRegressor
     MULTI_MLP = MultioutputMLPRegressor
 
 
