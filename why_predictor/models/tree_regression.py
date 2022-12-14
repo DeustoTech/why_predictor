@@ -13,56 +13,54 @@ logger = logging.getLogger("logger")
 
 
 DTHyperParamKeys = Literal[
-    "criterion",
-    "splitter",
-    "min_samples_split",
-    "min_samples_leaf",
-    "max_features",
-    "max_leaf_nodes",
-    "min_weight_fraction_leaf",
-    "min_impurity_decrease",
-    "ccp_alpha",
+    "max_depth",
+    # "criterion",
+    # "splitter",
+    # "min_samples_split",
+    # "min_samples_leaf",
+    # "max_features",
+    # "max_leaf_nodes",
+    # "min_weight_fraction_leaf",
+    # "min_impurity_decrease",
+    # "ccp_alpha",
 ]
 
 
 class DTHyperParams(TypedDict):
     """Decission Tree HyperParams type"""
 
-    criterion: List[str]
-    splitter: List[str]
-    min_samples_split: List[int]
-    min_samples_leaf: List[float]
-    max_features: List[Union[int, float, str]]
-    max_leaf_nodes: List[Union[None, int]]
-    min_weight_fraction_leaf: List[Union[int, float]]
-    min_impurity_decrease: List[float]
-    ccp_alpha: List[float]
+    max_depth: List[Union[None, int]]
+    # criterion: List[str]
+    # splitter: List[str]
+    # min_samples_split: List[int]
+    # min_samples_leaf: List[float]
+    # max_features: List[Union[int, float, str]]
+    # max_leaf_nodes: List[Union[None, int]]
+    # min_weight_fraction_leaf: List[Union[int, float]]
+    # min_impurity_decrease: List[float]
+    # ccp_alpha: List[float]
 
 
 class DecissionTreeRegressionModel(BasicModel):
     """Decission Tree Regression Class"""
 
     params: DTHyperParams = {
-        "criterion": [
-            "squared_error",
-            "absolute_error",
-            "friedman_mse",
-            "poisson",
-        ],
+        "max_depth": [None, 10, 15],
+        # "criterion": [
+        #     "squared_error",
+        #     "absolute_error",
+        #     "friedman_mse",
+        #     "poisson",
+        # ],
         # "splitter": ["best", "random"],
-        "splitter": ["best"],
         # "min_samples_split": [2, 3, 4, 5],
-        "min_samples_split": [2],
         # "min_samples_leaf": [1, 2, 3, 4, 5],
-        "min_samples_leaf": [1],
         # "min_weight_fraction_leaf": [0.0, 0.5],
-        "min_weight_fraction_leaf": [0.0],
-        "max_features": [1.0, "sqrt", "log2"],
-        "max_leaf_nodes": [None, 5, 10],
+        # "max_features": [1.0, "sqrt", "log2"],
+        # "max_leaf_nodes": [None, 5, 10],
         # "min_impurity_decrease": [0.0, 0.5, 1, 1.5],
-        "min_impurity_decrease": [0.0],
         # "ccp_alpha": [0.0, 0.5, 1, 1.5],
-        "ccp_alpha": [0.0, 0.5],
+        # "ccp_alpha": [0.0, 0.5],
     }
 
     def __init__(
