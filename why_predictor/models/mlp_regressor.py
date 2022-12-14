@@ -1,6 +1,6 @@
 """Multi-Layer Perceptron Regression model"""
 import logging
-from typing import Any, Dict, List, Literal, Optional, TypedDict, cast
+from typing import Any, Dict, List, Literal, Optional, Tuple, TypedDict, cast
 
 import pandas as pd  # type: ignore
 from sklearn.neural_network import MLPRegressor  # type: ignore
@@ -13,6 +13,7 @@ logger = logging.getLogger("logger")
 
 
 MLPHyperParamKeys = Literal[
+    "hidden_layer_sizes",
     "activation",
 ]
 
@@ -20,6 +21,7 @@ MLPHyperParamKeys = Literal[
 class MLPHyperParams(TypedDict):
     """MLP HyperParams type"""
 
+    hidden_layer_sizes: List[Tuple[int]]
     activation: List[str]
 
 
@@ -27,6 +29,7 @@ class MLPRegressionModel(BasicModel):
     """MLP Regression Class"""
 
     params: MLPHyperParams = {
+        "hidden_layer_sizes": [(100,), (150,), (200,)],
         "activation": ["tanh"],
     }
 
