@@ -1,42 +1,49 @@
 """Linear Regression model"""
 import logging
-from typing import Any, Dict, List, Optional, TypedDict
+from typing import Any, Dict, List, Literal, Optional, TypedDict, cast
 
 import pandas as pd  # type: ignore
 from sklearn.neighbors import KNeighborsRegressor  # type: ignore
 
 from ..errors import ErrorType
 from .abstract_model import BasicModel, ChainedModel, MultioutputModel
-from .utils import sanitize_params
+from .utils import generate_hyperparams_from_keys, sanitize_params
 
 logger = logging.getLogger("logger")
+
+
+KNNHyperParamKeys = Literal[
+    "n_neighbors",
+    "weights",
+    # "algorithm",
+    # "leaf_size",
+    # "p"
+]
 
 
 class KNNHyperParams(TypedDict):
     """KNN HyperParams type"""
 
     n_neighbors: List[int]
-    algorithm: List[str]
-    leaf_size: Dict[str, List[int]]
-    p: List[int]
+    weights: List[str]
+    # algorithm: List[str]
+    # leaf_size: Dict[str, List[int]]
+    # p: List[int]
 
 
 class KNNRegressionModel(BasicModel):
     """KNN Regression Class"""
 
     params: KNNHyperParams = {
-        # "n_neighbors": [3, 5, 10],
-        "n_neighbors": [5, 10],
-        "algorithm": ["ball_tree", "kd_tree", "brute"],
-        "leaf_size": {
-            # "ball_tree": [15, 30, 45],
-            "ball_tree": [30],
-            # "kd_tree": [15, 30, 45],
-            "kd_tree": [30],
-            "brute": [30],
-        },
-        # "p": [1, 2, 3, 4, 5],
-        "p": [1, 2],
+        "n_neighbors": [5, 10, 15],  # TO fit
+        "weights": ["distance"],  # Fixed
+        # "algorithm": ["ball_tree", "kd_tree", "brute"],
+        # "leaf_size": {
+        #     "ball_tree": [15, 30, 45],
+        #     "kd_tree": [30],
+        #     "brute": [30],
+        # },
+        # "p": [1, 2],
     }
 
     def __init__(
@@ -51,19 +58,10 @@ class KNNRegressionModel(BasicModel):
 
     def generate_hyperparams(self) -> None:
         """Generate hyperparams"""
-        hyperparams = []
-        for n_neighbors in self.__params["n_neighbors"]:
-            for algorithm in self.__params["algorithm"]:
-                for leaf_size in self.__params["leaf_size"][algorithm]:
-                    for power in self.__params["p"]:
-                        hyperparams.append(
-                            {
-                                "n_neighbors": n_neighbors,
-                                "algorithm": algorithm,
-                                "leaf_size": leaf_size,
-                                "p": power,
-                            }
-                        )
+        keys: List[KNNHyperParamKeys] = cast(
+            List[KNNHyperParamKeys], list(self.__params.keys())
+        )
+        hyperparams = generate_hyperparams_from_keys(self.__params, {}, keys)
         self.generate_hyperparams_objects(hyperparams)
 
 
