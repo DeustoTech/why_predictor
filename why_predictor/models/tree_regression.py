@@ -3,6 +3,7 @@ import logging
 from typing import Any, Dict, List, Literal, Optional, TypedDict, Union, cast
 
 import pandas as pd  # type: ignore
+from sklearn.multioutput import RegressorChain  # type: ignore
 from sklearn.tree import DecisionTreeRegressor  # type: ignore
 
 from ..errors import ErrorType
@@ -82,11 +83,13 @@ class DecissionTreeRegressionModel(BasicModel):
         self.generate_hyperparams_objects(hyperparams)
 
 
-class DecissionTreeRegressor(DecissionTreeRegressionModel, ChainedModel):
-    """Decission Tree Regression Class"""
+class ShiftedDecissionTreeRegressor(
+    DecissionTreeRegressionModel, ChainedModel
+):
+    """Shifted Decission Tree Regression Class"""
 
-    name = "Decission Tree Regression"
-    short_name = "DT"
+    name = "Shifted Decission Tree Regression"
+    short_name = "SHIFT_DT"
 
     def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
         """Generate model"""
@@ -98,13 +101,31 @@ class DecissionTreeRegressor(DecissionTreeRegressionModel, ChainedModel):
         return dt_model
 
 
+class ChainedDecissionTreeRegressor(
+    DecissionTreeRegressionModel, MultioutputModel
+):
+    """ChainedDecission Tree Regression Class"""
+
+    name = "Chained Decission Tree Regression"
+    short_name = "CHAIN_DT"
+
+    def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
+        """Generate model"""
+        model = RegressorChain(DecisionTreeRegressor(**hyper_params))
+        chained_dt_model = model.fit(
+            self.train_features.drop("timeseries", axis=1),
+            self.train_output.drop("timeseries", axis=1),
+        )
+        return chained_dt_model
+
+
 class MultioutputDecissionTreeRegressor(
     DecissionTreeRegressionModel, MultioutputModel
 ):
     """Decission Tree Regression Class"""
 
     name = "Multioutput Decission Tree Regression"
-    short_name = "Multi_DT"
+    short_name = "MULTI_DT"
 
     def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
         """Generate model"""
