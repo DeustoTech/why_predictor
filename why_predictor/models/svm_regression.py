@@ -3,7 +3,10 @@ import logging
 from typing import Any, Dict, List, Literal, Optional, TypedDict, cast
 
 import pandas as pd  # type: ignore
-from sklearn.multioutput import MultiOutputRegressor  # type: ignore
+from sklearn.multioutput import (  # type: ignore
+    MultiOutputRegressor,
+    RegressorChain,
+)
 from sklearn.svm import LinearSVR  # type: ignore
 
 from ..errors import ErrorType
@@ -35,9 +38,10 @@ class SVMRegressionModel(BasicModel):
 
     params: SVRHyperParams = {
         "epsilon": [0.0],
-        "tol": [1e-4, 1e-3],
-        "C": [1.0, 2.0],
-        "loss": ["epsilon_insensitive", "squared_epsilon_insensitive"],
+        "tol": [1e-4],
+        "C": [1.0],
+        # "loss": ["epsilon_insensitive", "squared_epsilon_insensitive"],
+        "loss": ["epsilon_insensitive"],
     }
 
     def __init__(
@@ -59,11 +63,11 @@ class SVMRegressionModel(BasicModel):
         self.generate_hyperparams_objects(hyperparams)
 
 
-class SupportVectorRegressor(SVMRegressionModel, ChainedModel):
-    """Support Vector Regressor"""
+class ShiftedSupportVectorRegressor(SVMRegressionModel, ChainedModel):
+    """Shifted Support Vector Regressor"""
 
-    name = "Support Vector Regression"
-    short_name = "SVR"
+    name = "Shifted Support Vector Regression"
+    short_name = "SHIFT_SVR"
 
     def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
         """Generate model"""
@@ -76,17 +80,34 @@ class SupportVectorRegressor(SVMRegressionModel, ChainedModel):
         return svr_model
 
 
+class ChainedSupportVectorRegressor(SVMRegressionModel, MultioutputModel):
+    """Chained Support Vector Regressor"""
+
+    name = "Chained Support Vector Regression"
+    short_name = "CHAIN_SVR"
+
+    def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
+        """Generate model"""
+        # We train with only the column for the first hour
+        model = RegressorChain(LinearSVR(**hyper_params, max_iter=10000))
+        chained_svr_model = model.fit(
+            self.train_features.drop("timeseries", axis=1),
+            self.train_output.drop("timeseries", axis=1),
+        )
+        return chained_svr_model
+
+
 class MultioutputSVMRegressor(SVMRegressionModel, MultioutputModel):
     """Multioutput Support Vector Regressor"""
 
     name = "Multioutput Support Vector Regression"
-    short_name = "Multi_SVR"
+    short_name = "MULTI_SVR"
 
     def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
         """Generate model"""
         model = MultiOutputRegressor(LinearSVR(**hyper_params, max_iter=10000))
-        multi_knn_model = model.fit(
+        multi_svr_model = model.fit(
             self.train_features.drop("timeseries", axis=1),
             self.train_output.drop("timeseries", axis=1),
         )
-        return multi_knn_model
+        return multi_svr_model
