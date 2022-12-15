@@ -3,11 +3,15 @@ from enum import Enum
 
 from .abstract_model import BasicModel
 from .knn_regression import (
-    ShiftedKNNRegressor,
     ChainedKNNRegressor,
-    MultioutputKNNRegressor
+    MultioutputKNNRegressor,
+    ShiftedKNNRegressor,
 )
-from .linear_regression import LinearRegressor, MultioutputLinearRegressor
+from .linear_regression import (
+    ChainedLinearRegressor,
+    MultioutputLinearRegressor,
+    ShiftedLinearRegressor,
+)
 from .mlp_regressor import (
     MultiLayerPerceptronRegressor,
     MultioutputMLPRegressor,
@@ -27,13 +31,14 @@ from .tree_regression import (
 class Models(Enum):
     """Enum with Models"""
 
-    LR = LinearRegressor
+    SHIFT_LR = ShiftedLinearRegressor
     RF = RFRegressor
     SHIFT_KNN = ShiftedKNNRegressor
     DT = DecissionTreeRegressor
     SVR = SupportVectorRegressor
     SGD = StochasticGradientDescentRegressor
     MLP = MultiLayerPerceptronRegressor
+    CHAIN_LR = ChainedLinearRegressor
     CHAIN_KNN = ChainedKNNRegressor
     MULTI_LR = MultioutputLinearRegressor
     MULTI_RF = MultioutputRFRegressor
