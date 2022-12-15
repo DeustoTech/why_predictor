@@ -29,6 +29,7 @@ class CustomFormatter(argparse.HelpFormatter):
     """Custom formatter to break lines in Help text preceded by #"""
 
     def _split_lines(self, text: str, width: int) -> Any:
+        # pylint: disable=protected-access
         if text.startswith("#"):
             return text[1:].splitlines()
         # this is the RawTextHelpFormatter._split_lines
