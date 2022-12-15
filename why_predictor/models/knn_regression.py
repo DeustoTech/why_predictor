@@ -3,6 +3,7 @@ import logging
 from typing import Any, Dict, List, Literal, Optional, TypedDict, cast
 
 import pandas as pd  # type: ignore
+from sklearn.multioutput import RegressorChain  # type: ignore
 from sklearn.neighbors import KNeighborsRegressor  # type: ignore
 
 from ..errors import ErrorType
@@ -65,11 +66,11 @@ class KNNRegressionModel(BasicModel):
         self.generate_hyperparams_objects(hyperparams)
 
 
-class KNNRegressor(KNNRegressionModel, ChainedModel):
-    """Chained KNN Regressor"""
+class ShiftedKNNRegressor(KNNRegressionModel, ChainedModel):
+    """Shifted Chained KNN Regressor"""
 
-    name = "KNN Regression"
-    short_name = "KNN"
+    name = "Shifted KNN Regression"
+    short_name = "SHIFT_KNN"
 
     def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
         """Generate model"""
@@ -82,11 +83,27 @@ class KNNRegressor(KNNRegressionModel, ChainedModel):
         return knn_model
 
 
+class ChainedKNNRegressor(KNNRegressionModel, MultioutputModel):
+    """Chained KNN Regressor"""
+
+    name = "Chained KNN Regression"
+    short_name = "CHAIN_KNN"
+
+    def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
+        """Generate model"""
+        model = RegressorChain(KNeighborsRegressor(**hyper_params, n_jobs=-1))
+        chained_knn_model = model.fit(
+            self.train_features.drop("timeseries", axis=1),
+            self.train_output.drop("timeseries", axis=1),
+        )
+        return chained_knn_model
+
+
 class MultioutputKNNRegressor(KNNRegressionModel, MultioutputModel):
     """Multioutput KNN Regressor"""
 
     name = "Multioutput KNN Regression"
-    short_name = "Multi_KNN"
+    short_name = "MULTI_KNN"
 
     def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
         """Generate model"""

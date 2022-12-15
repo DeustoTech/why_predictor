@@ -2,7 +2,11 @@
 from enum import Enum
 
 from .abstract_model import BasicModel
-from .knn_regression import KNNRegressor, MultioutputKNNRegressor
+from .knn_regression import (
+    ShiftedKNNRegressor,
+    ChainedKNNRegressor,
+    MultioutputKNNRegressor
+)
 from .linear_regression import LinearRegressor, MultioutputLinearRegressor
 from .mlp_regressor import (
     MultiLayerPerceptronRegressor,
@@ -25,11 +29,12 @@ class Models(Enum):
 
     LR = LinearRegressor
     RF = RFRegressor
-    KNN = KNNRegressor
+    SHIFT_KNN = ShiftedKNNRegressor
     DT = DecissionTreeRegressor
     SVR = SupportVectorRegressor
     SGD = StochasticGradientDescentRegressor
     MLP = MultiLayerPerceptronRegressor
+    CHAIN_KNN = ChainedKNNRegressor
     MULTI_LR = MultioutputLinearRegressor
     MULTI_RF = MultioutputRFRegressor
     MULTI_KNN = MultioutputKNNRegressor
