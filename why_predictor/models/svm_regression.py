@@ -3,8 +3,8 @@ import logging
 from typing import Any, Dict, List, Literal, Optional, TypedDict, cast
 
 import pandas as pd  # type: ignore
-from sklearn.svm import LinearSVR  # type: ignore
 from sklearn.multioutput import MultiOutputRegressor  # type: ignore
+from sklearn.svm import LinearSVR  # type: ignore
 
 from ..errors import ErrorType
 from .abstract_model import BasicModel, ChainedModel, MultioutputModel

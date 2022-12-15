@@ -10,10 +10,10 @@ from .mlp_regressor import (
 )
 from .random_forest_regression import MultioutputRFRegressor, RFRegressor
 from .sgd_regressor import (
-    StochasticGradientDescentRegressor,
     MultioutputSGDRegressor,
+    StochasticGradientDescentRegressor,
 )
-from .svm_regression import SupportVectorRegressor, MultioutputSVMRegressor
+from .svm_regression import MultioutputSVMRegressor, SupportVectorRegressor
 from .tree_regression import (
     DecissionTreeRegressor,
     MultioutputDecissionTreeRegressor,
