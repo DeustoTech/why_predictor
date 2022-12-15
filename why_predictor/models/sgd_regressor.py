@@ -4,7 +4,10 @@ from typing import Any, Dict, List, Literal, Optional, TypedDict, cast
 
 import pandas as pd  # type: ignore
 from sklearn.linear_model import SGDRegressor  # type: ignore
-from sklearn.multioutput import MultiOutputRegressor  # type: ignore
+from sklearn.multioutput import (  # type: ignore
+    MultiOutputRegressor,
+    RegressorChain,
+)
 
 from ..errors import ErrorType
 from .abstract_model import BasicModel, ChainedModel, MultioutputModel
@@ -50,11 +53,13 @@ class SGDRegressionModel(BasicModel):
         self.generate_hyperparams_objects(hyperparams)
 
 
-class StochasticGradientDescentRegressor(SGDRegressionModel, ChainedModel):
-    """Stochastic Gradient Descent Regressor"""
+class ShiftedStochasticGradientDescentRegressor(
+    SGDRegressionModel, ChainedModel
+):
+    """Shifted Stochastic Gradient Descent Regressor"""
 
-    name = "Stochastic Gradient Descent Regressor"
-    short_name = "SGD"
+    name = "Shifted Stochastic Gradient Descent Regressor"
+    short_name = "SHIFT_SGD"
 
     def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
         """Generate model"""
@@ -67,17 +72,36 @@ class StochasticGradientDescentRegressor(SGDRegressionModel, ChainedModel):
         return sgd_model
 
 
+class ChainedStochasticGradientDescentRegressor(
+    SGDRegressionModel, MultioutputModel
+):
+    """Chained Stochastic Gradient Descent Regressor"""
+
+    name = "Chained Stochastic Gradient Descent Regressor"
+    short_name = "CHAIN_SGD"
+
+    def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
+        """Generate model"""
+        # We train with only the column for the first hour
+        model = RegressorChain(SGDRegressor(**hyper_params))
+        chained_sgd_model = model.fit(
+            self.train_features.drop("timeseries", axis=1),
+            self.train_output.drop("timeseries", axis=1),
+        )
+        return chained_sgd_model
+
+
 class MultioutputSGDRegressor(SGDRegressionModel, MultioutputModel):
     """Multioutput SGD Regressor"""
 
     name = "Multioutput SGD Regression"
-    short_name = "Multi_SGD"
+    short_name = "MULTI_SGD"
 
     def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
         """Generate model"""
         model = MultiOutputRegressor(SGDRegressor(**hyper_params))
-        multi_knn_model = model.fit(
+        multi_sgd_model = model.fit(
             self.train_features.drop("timeseries", axis=1),
             self.train_output.drop("timeseries", axis=1),
         )
-        return multi_knn_model
+        return multi_sgd_model
