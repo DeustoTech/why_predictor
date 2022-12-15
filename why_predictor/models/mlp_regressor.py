@@ -3,6 +3,7 @@ import logging
 from typing import Any, Dict, List, Literal, Optional, Tuple, TypedDict, cast
 
 import pandas as pd  # type: ignore
+from sklearn.multioutput import RegressorChain  # type: ignore
 from sklearn.neural_network import MLPRegressor  # type: ignore
 
 from ..errors import ErrorType
@@ -52,11 +53,11 @@ class MLPRegressionModel(BasicModel):
         self.generate_hyperparams_objects(hyperparams)
 
 
-class MultiLayerPerceptronRegressor(MLPRegressionModel, ChainedModel):
-    """Multi-layer Preceptron Regressor"""
+class ShiftedMultiLayerPerceptronRegressor(MLPRegressionModel, ChainedModel):
+    """Shifted Multi-layer Preceptron Regressor"""
 
-    name = "Stochastic Gradient Descent Regressor"
-    short_name = "MLP"
+    name = "Shifted Multi-layer Perceptron Regressor"
+    short_name = "SHIFT_MLP"
 
     def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
         """Generate model"""
@@ -69,17 +70,36 @@ class MultiLayerPerceptronRegressor(MLPRegressionModel, ChainedModel):
         return sgd_model
 
 
+class ChainedMultiLayerPerceptronRegressor(
+    MLPRegressionModel, MultioutputModel
+):
+    """Chained Multi-layer Perceptron Regressor"""
+
+    name = "Chained Multi-layer Perceptron Regressor"
+    short_name = "CHAIN_MLP"
+
+    def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
+        """Generate model"""
+        # We train with only the column for the first hour
+        model = RegressorChain(MLPRegressor(**hyper_params))
+        chained_sgd_model = model.fit(
+            self.train_features.drop("timeseries", axis=1),
+            self.train_output.drop("timeseries", axis=1),
+        )
+        return chained_sgd_model
+
+
 class MultioutputMLPRegressor(MLPRegressionModel, MultioutputModel):
     """Multioutput KNN Regressor"""
 
-    name = "Multioutput KNN Regression"
-    short_name = "Multi_KNN"
+    name = "Multioutput MLP Regression"
+    short_name = "MULTI_MLP"
 
     def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
         """Generate model"""
         model = MLPRegressor(**hyper_params)
-        multi_knn_model = model.fit(
+        multi_mlp_model = model.fit(
             self.train_features.drop("timeseries", axis=1),
             self.train_output.drop("timeseries", axis=1),
         )
-        return multi_knn_model
+        return multi_mlp_model

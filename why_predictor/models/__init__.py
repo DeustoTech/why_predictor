@@ -13,8 +13,9 @@ from .linear_regression import (
     ShiftedLinearRegressor,
 )
 from .mlp_regressor import (
-    MultiLayerPerceptronRegressor,
+    ChainedMultiLayerPerceptronRegressor,
     MultioutputMLPRegressor,
+    ShiftedMultiLayerPerceptronRegressor,
 )
 from .random_forest_regression import MultioutputRFRegressor, RFRegressor
 from .sgd_regressor import (
@@ -43,12 +44,13 @@ class Models(Enum):
     SHIFT_DT = ShiftedDecissionTreeRegressor
     SHIFT_SVR = ShiftedSupportVectorRegressor
     SHIFT_SGD = ShiftedStochasticGradientDescentRegressor
-    MLP = MultiLayerPerceptronRegressor
+    SHIFT_MLP = ShiftedMultiLayerPerceptronRegressor
     CHAIN_LR = ChainedLinearRegressor
     CHAIN_KNN = ChainedKNNRegressor
     CHAIN_DT = ChainedDecissionTreeRegressor
     CHAIN_SVR = ChainedSupportVectorRegressor
     CHAIN_SGD = ChainedStochasticGradientDescentRegressor
+    CHAIN_MLP = ChainedMultiLayerPerceptronRegressor
     MULTI_LR = MultioutputLinearRegressor
     MULTI_RF = MultioutputRFRegressor
     MULTI_KNN = MultioutputKNNRegressor
