@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Literal, Optional, TypedDict, Union, cast
 
 import pandas as pd  # type: ignore
 from sklearn.ensemble import RandomForestRegressor  # type: ignore
+from sklearn.multioutput import RegressorChain  # type: ignore
 
 from ..errors import ErrorType
 from .abstract_model import BasicModel, ChainedModel, MultioutputModel
@@ -86,11 +87,11 @@ class RandomForestRegressionModel(BasicModel):
         self.generate_hyperparams_objects(hyperparams)
 
 
-class RFRegressor(RandomForestRegressionModel, ChainedModel):
-    """Random Forest Regressor"""
+class ShiftedRFRegressor(RandomForestRegressionModel, ChainedModel):
+    """Shifted Random Forest Regressor"""
 
-    name = "Random Forest Regression"
-    short_name = "RF"
+    name = "Shifted Random Forest Regression"
+    short_name = "SHIFT_RF"
 
     def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
         """Generate model"""
@@ -102,11 +103,29 @@ class RFRegressor(RandomForestRegressionModel, ChainedModel):
         return random_forest_model
 
 
+class ChainedRFRegressor(RandomForestRegressionModel, MultioutputModel):
+    """Chained Random Forest Regressor"""
+
+    name = "Chained Random Forest Regression"
+    short_name = "CHAIN_RF"
+
+    def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
+        """Generate model"""
+        model = RegressorChain(
+            RandomForestRegressor(**hyper_params, n_jobs=-1)
+        )
+        chained_random_forest_model = model.fit(
+            self.train_features.drop("timeseries", axis=1),
+            self.train_output.drop("timeseries", axis=1),
+        )
+        return chained_random_forest_model
+
+
 class MultioutputRFRegressor(RandomForestRegressionModel, MultioutputModel):
     """Multioutput Random Forest Regressor"""
 
     name = "Multioutput Random Forest Regression"
-    short_name = "Multi_RF"
+    short_name = "MULTI_RF"
 
     def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
         """Generate model"""
