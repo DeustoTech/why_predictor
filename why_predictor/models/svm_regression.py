@@ -10,7 +10,7 @@ from sklearn.multioutput import (  # type: ignore
 from sklearn.svm import LinearSVR  # type: ignore
 
 from ..errors import ErrorType
-from .abstract_model import BasicModel, ChainedModel, MultioutputModel
+from .abstract_model import BasicModel, MultioutputModel, ShiftedModel
 from .utils import generate_hyperparams_from_keys, sanitize_params
 
 logger = logging.getLogger("logger")
@@ -63,7 +63,7 @@ class SVMRegressionModel(BasicModel):
         self.generate_hyperparams_objects(hyperparams)
 
 
-class ShiftedSupportVectorRegressor(SVMRegressionModel, ChainedModel):
+class ShiftedSupportVectorRegressor(SVMRegressionModel, ShiftedModel):
     """Shifted Support Vector Regressor"""
 
     name = "Shifted Support Vector Regression"

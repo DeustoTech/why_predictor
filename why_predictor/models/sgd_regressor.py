@@ -10,7 +10,7 @@ from sklearn.multioutput import (  # type: ignore
 )
 
 from ..errors import ErrorType
-from .abstract_model import BasicModel, ChainedModel, MultioutputModel
+from .abstract_model import BasicModel, MultioutputModel, ShiftedModel
 from .utils import generate_hyperparams_from_keys, sanitize_params
 
 logger = logging.getLogger("logger")
@@ -54,7 +54,7 @@ class SGDRegressionModel(BasicModel):
 
 
 class ShiftedStochasticGradientDescentRegressor(
-    SGDRegressionModel, ChainedModel
+    SGDRegressionModel, ShiftedModel
 ):
     """Shifted Stochastic Gradient Descent Regressor"""
 

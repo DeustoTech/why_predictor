@@ -7,7 +7,7 @@ from sklearn.multioutput import RegressorChain  # type: ignore
 from sklearn.neural_network import MLPRegressor  # type: ignore
 
 from ..errors import ErrorType
-from .abstract_model import BasicModel, ChainedModel, MultioutputModel
+from .abstract_model import BasicModel, MultioutputModel, ShiftedModel
 from .utils import generate_hyperparams_from_keys, sanitize_params
 
 logger = logging.getLogger("logger")
@@ -53,7 +53,7 @@ class MLPRegressionModel(BasicModel):
         self.generate_hyperparams_objects(hyperparams)
 
 
-class ShiftedMultiLayerPerceptronRegressor(MLPRegressionModel, ChainedModel):
+class ShiftedMultiLayerPerceptronRegressor(MLPRegressionModel, ShiftedModel):
     """Shifted Multi-layer Preceptron Regressor"""
 
     name = "Shifted Multi-layer Perceptron Regressor"

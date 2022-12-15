@@ -7,7 +7,7 @@ from sklearn.multioutput import RegressorChain  # type: ignore
 from sklearn.neighbors import KNeighborsRegressor  # type: ignore
 
 from ..errors import ErrorType
-from .abstract_model import BasicModel, ChainedModel, MultioutputModel
+from .abstract_model import BasicModel, MultioutputModel, ShiftedModel
 from .utils import generate_hyperparams_from_keys, sanitize_params
 
 logger = logging.getLogger("logger")
@@ -66,7 +66,7 @@ class KNNRegressionModel(BasicModel):
         self.generate_hyperparams_objects(hyperparams)
 
 
-class ShiftedKNNRegressor(KNNRegressionModel, ChainedModel):
+class ShiftedKNNRegressor(KNNRegressionModel, ShiftedModel):
     """Shifted Chained KNN Regressor"""
 
     name = "Shifted KNN Regression"

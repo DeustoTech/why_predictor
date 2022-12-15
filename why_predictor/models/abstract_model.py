@@ -122,8 +122,8 @@ class BasicModel(ABC):
             fhyper.write(self.fitted["name"])
 
 
-class ChainedModel(BasicModel):
-    """Chained Basic Model"""
+class ShiftedModel(BasicModel):
+    """Shifted Basic Model"""
 
     def calculate_errors(
         self,

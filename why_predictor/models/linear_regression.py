@@ -7,7 +7,7 @@ from sklearn.linear_model import LinearRegression  # type: ignore
 from sklearn.multioutput import RegressorChain  # type: ignore
 
 from ..errors import ErrorType
-from .abstract_model import BasicModel, ChainedModel, MultioutputModel
+from .abstract_model import BasicModel, MultioutputModel, ShiftedModel
 
 logger = logging.getLogger("logger")
 
@@ -22,7 +22,7 @@ class LinearRegressionModel(BasicModel):
         self.generate_hyperparams_objects([{}])
 
 
-class ShiftedLinearRegressor(LinearRegressionModel, ChainedModel):
+class ShiftedLinearRegressor(LinearRegressionModel, ShiftedModel):
     """Shifted Linear Regressor"""
 
     name = "Shifted Linear Regression"

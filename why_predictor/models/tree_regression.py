@@ -7,7 +7,7 @@ from sklearn.multioutput import RegressorChain  # type: ignore
 from sklearn.tree import DecisionTreeRegressor  # type: ignore
 
 from ..errors import ErrorType
-from .abstract_model import BasicModel, ChainedModel, MultioutputModel
+from .abstract_model import BasicModel, MultioutputModel, ShiftedModel
 from .utils import generate_hyperparams_from_keys, sanitize_params
 
 logger = logging.getLogger("logger")
@@ -84,7 +84,7 @@ class DecissionTreeRegressionModel(BasicModel):
 
 
 class ShiftedDecissionTreeRegressor(
-    DecissionTreeRegressionModel, ChainedModel
+    DecissionTreeRegressionModel, ShiftedModel
 ):
     """Shifted Decission Tree Regression Class"""
 

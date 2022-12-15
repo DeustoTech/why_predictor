@@ -7,7 +7,7 @@ from sklearn.ensemble import RandomForestRegressor  # type: ignore
 from sklearn.multioutput import RegressorChain  # type: ignore
 
 from ..errors import ErrorType
-from .abstract_model import BasicModel, ChainedModel, MultioutputModel
+from .abstract_model import BasicModel, MultioutputModel, ShiftedModel
 from .utils import generate_hyperparams_from_keys, sanitize_params
 
 logger = logging.getLogger("logger")
@@ -87,7 +87,7 @@ class RandomForestRegressionModel(BasicModel):
         self.generate_hyperparams_objects(hyperparams)
 
 
-class ShiftedRFRegressor(RandomForestRegressionModel, ChainedModel):
+class ShiftedRFRegressor(RandomForestRegressionModel, ShiftedModel):
     """Shifted Random Forest Regressor"""
 
     name = "Shifted Random Forest Regression"
