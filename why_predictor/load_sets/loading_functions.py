@@ -105,32 +105,76 @@ def load_files(
     return data
 
 
-def split_dataset_in_train_and_test(
-    data: pd.DataFrame, train_ratio: float, num_features: int
-) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """Split the dataset in train and test"""
-    logger.info("Generating train and test sets...")
-    mydict = dict(tuple(data.groupby("timeseries")))
+def _get_train_test_dataframes(
+    mydict: Dict[str, pd.DataFrame], train_ratio: float
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     train_dict = {}
     test_dict = {}
     for timeseries in mydict:
         dataset = mydict[timeseries]
         limit = int(len(dataset) * train_ratio)
+        logger.debug("Limit %s: %d", timeseries, limit)
         train_dict[timeseries] = dataset.iloc[:limit]
         test_dict[timeseries] = dataset.iloc[limit:]
         # .reset_index(drop=True)
     train = pd.concat(train_dict.values(), ignore_index=True)
     test = pd.concat(test_dict.values(), ignore_index=True)
+    return (train, test)
+
+
+def split_dataset_in_train_and_test(
+    data: pd.DataFrame,
+    train_ratio: float,
+    num_features: int,
+    num_head_columns: int = 1,
+    groupby_name: str = "timeseries",
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Split the dataset in train and test"""
+    logger.info("Generating train and test sets...")
+    train, test = _get_train_test_dataframes(
+        dict(tuple(data.groupby(groupby_name))), train_ratio
+    )
     logger.info("Train\n%r", train.head())
     logger.info("Train shape: %r", train.shape)
     logger.info("Test\n%r", test.head())
     logger.info("Test shape: %r", test.shape)
     logger.info(test.shape)
-    train_features = train.iloc[:, : num_features + 1]
-    train_output = train.drop(train.iloc[:, 1 : num_features + 1], axis=1)
-    test_features = test.iloc[:, : num_features + 1]
-    test_output = test.drop(test.iloc[:, 1 : num_features + 1], axis=1)
+    train_features = train.iloc[:, : num_features + num_head_columns]
+    train_output = train.drop(
+        train.iloc[:, num_head_columns:num_features], axis=1
+    )
+    test_features = test.iloc[:, : num_features + num_head_columns]
+    test_output = test.drop(
+        test.iloc[:, num_head_columns:num_features], axis=1
+    )
     return (train_features, train_output, test_features, test_output)
+
+
+def split_fforma_in_train_and_test(
+    data: pd.DataFrame, train_ratio: float, num_features: int
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Split the FFORMA dataset in train and test"""
+    # Create a FFORMA Dataset with dataset column
+    newdata = pd.DataFrame(
+        [x[0] for x in data.iloc[:, 0].str.split("_").tolist()]
+    )
+    newdata = pd.concat([newdata, data], ignore_index=True, axis=1)
+    newdata.columns = ["dataset", *data.columns]
+    logger.debug("FFORMA with dataset column:\n%r", newdata)
+    (
+        train_features,
+        train_output,
+        test_features,
+        test_output,
+    ) = split_dataset_in_train_and_test(
+        newdata, train_ratio, num_features, 2, "dataset"
+    )
+    return (
+        train_features.drop(["dataset"], axis=1),
+        train_output.drop(["dataset"], axis=1),
+        test_features.drop(["dataset"], axis=1),
+        test_output.drop(["dataset"], axis=1),
+    )
 
 
 def get_train_and_test_datasets(

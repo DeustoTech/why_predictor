@@ -119,7 +119,7 @@ class BasicModel(ABC):
             os.makedirs(base_path)
         filename = os.path.join(base_path, f"{self.short_name}.json")
         with open(filename, "w", encoding="utf8") as fhyper:
-            fhyper.write(self.fitted["name"])
+            fhyper.write(f"{self.fitted['median']}|{self.fitted['name']}")
 
 
 class ShiftedModel(BasicModel):

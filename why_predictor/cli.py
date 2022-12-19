@@ -6,15 +6,14 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any
 
 import argcomplete  # type: ignore
-import pandas as pd  # type: ignore
 from dotenv import load_dotenv
 
-from .errors import ErrorType
-from .load_sets import find_csv_files, get_train_and_test_datasets
-from .models import BasicModel, Models
+from .load_sets import find_csv_files
+from .models import Models
+from .training import select_hyperparameters, train_fforma
 
 logging.basicConfig(
     stream=sys.stdout,
@@ -162,113 +161,6 @@ def generate_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def select_hyperparameters(
-    series: Dict[str, List[str]], args: argparse.Namespace
-) -> None:
-    """Execute"""
-    (
-        train_features,
-        train_output,
-        test_features,
-        test_output,
-    ) = get_train_and_test_datasets(
-        series,
-        args.training_percentage_hyperparams,
-        args.num_features,
-        args.num_predictions,
-        args.train_test_ratio_hyperparams,
-    )
-    # Calculate models
-    for model_name in args.models_training:
-        Models[model_name].value(
-            train_features, train_output, ErrorType[args.error_type_models]
-        ).fit(test_features, test_output, base_path="model-training")
-
-
-def fforma_training(
-    series: Dict[str, List[str]], args: argparse.Namespace
-) -> pd.DataFrame:
-    """Generate FFORMA ensemble"""
-    (
-        train_features,
-        train_output,
-        test_features,
-        test_output,
-    ) = get_train_and_test_datasets(
-        series,
-        args.training_percentage_fforma,
-        args.num_features,
-        args.num_predictions,
-        args.train_test_ratio_fforma,
-    )
-    # Calculate models
-    models_dict = _load_models_dict(
-        args, train_features, train_output, test_features, test_output
-    )
-    # Generate FFORMA dataset
-    timeseries_dict = _generate_timeseries_dict(models_dict)
-    column_names: List[Union[str, float]] = ["timeseries"]
-    column_names.extend(["c1", "c2", "c3"])  # TODO to be decided
-    column_names.extend([m.short_name for m in models_dict.values()])
-    df_fforma = pd.DataFrame(columns=column_names)
-    for timeseries_id, timeseries in timeseries_dict.items():
-        row_data: List[Union[str, float]] = [timeseries_id, "X", "X", "X"]
-        row_data.extend(timeseries.values())
-        df_fforma = pd.concat(
-            [pd.DataFrame([row_data], columns=df_fforma.columns), df_fforma],
-            ignore_index=True,
-        )
-    if not os.path.exists("fforma-training"):
-        os.makedirs("fforma-training")
-    df_fforma.to_csv("fforma-training/fforma.csv", index=False)
-    return df_fforma
-
-
-def _load_models_dict(
-    args: argparse.Namespace,
-    train_features: pd.DataFrame,
-    train_output: pd.DataFrame,
-    test_features: pd.DataFrame,
-    test_output: pd.DataFrame,
-) -> Dict[str, BasicModel]:
-    models_dict = {}
-    for model_name in args.models_training:
-        filename = f"model-training/hyperparameters/{model_name}.json"
-        try:
-            with open(filename, encoding="utf8") as fhyper:
-                hyperparameters = json.loads(fhyper.read())
-        except FileNotFoundError:
-            logger.error("File '%s' not found. Aborting...", filename)
-            sys.exit(1)
-        models_dict[model_name] = Models[model_name].value(
-            train_features,
-            train_output,
-            ErrorType[args.error_type_fforma],
-            hyperparameters,
-        )
-        models_dict[model_name].fit(
-            test_features,
-            test_output,
-        )
-    return models_dict
-
-
-def _generate_timeseries_dict(
-    models_dict: Dict[str, BasicModel]
-) -> Dict[str, Dict[str, float]]:
-    timeseries_dict: Dict[str, Dict[str, float]] = {}
-    for model in models_dict.values():
-        for timeseries, error_metric in model.fitted["errors"].groupby(
-            "timeseries"
-        ):
-            if timeseries not in timeseries_dict:
-                timeseries_dict[timeseries] = {}
-            timeseries_dict[timeseries][model.short_name] = (
-                error_metric.drop("timeseries", axis=1).stack().median()
-            )
-    return timeseries_dict
-
-
 def main() -> None:
     """Main"""
     parser = generate_parser()
@@ -285,11 +177,16 @@ def main() -> None:
     # Execute select_hyperparameters if mode is [generate-errors or full]
     if args.mode != "generate-fforma":
         logger.info("* Selecting best hyperparameters...")
-        select_hyperparameters(series, args)
+        select_hyperparameters(series, args, "model-training")
     # Execute select_fforma if mode is [generate-fforma or full]
     if args.mode != "generate-errors":
         logger.info("* Generating FFORMA...")
-        fforma_training(series, args)
+        train_fforma(
+            series,
+            args.training_percentage_fforma,
+            args.train_test_ratio_fforma,
+            args,
+        )
 
 
 if __name__ == "__main__":
