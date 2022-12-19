@@ -12,9 +12,91 @@ from ..load_sets import (
     split_fforma_in_train_and_test,
 )
 from ..models import BasicModel
-from .models import get_dict_trained_models, train_models
+from .models import (
+    get_best_trained_model,
+    get_dict_trained_models,
+    train_models,
+)
 
 logger = logging.getLogger("logger")
+
+
+def final_fforma_prediction(
+    series: Dict[str, List[str]],
+    training_percentage_fforma: float,
+    train_test_ratio_fforma: float,
+    args: Namespace,
+) -> None:
+    """final FFORMA prediction"""
+    # Get fforma dataset and models_dict
+    fforma_dataset, models_dict = generate_fforma_dataset(
+        series, training_percentage_fforma, train_test_ratio_fforma, args
+    )
+    # Get train-test datasets
+    (
+        train_features,
+        train_output,
+        test_features,
+        test_output,
+    ) = split_fforma_in_train_and_test(
+        fforma_dataset,
+        args.train_test_ratio_fforma_eval,
+        fforma_dataset.shape[1] - len(args.models_training) - 1,
+    )
+    # Get FFORMA model
+    fforma: BasicModel = get_best_trained_model(
+        args.models_fforma,
+        (train_features, train_output, test_features, test_output),
+        ErrorType[args.error_type_fforma],
+        base_path="fforma-training",
+    )
+    # Get FFORMA output
+    fforma_output = get_fforma_final_output(fforma, models_dict)
+    # Error
+    aux = models_dict[list(models_dict.keys())[0]].test_output
+    original_test_output = aux[
+        aux["timeseries"].isin(fforma.predictions["timeseries"])
+    ]
+    error_metric = ErrorType[args.error_type_fforma_eval].value(
+        original_test_output, fforma_output, train_features
+    )
+    logger.debug("FFORMA median error: %f", error_metric.stack().median())
+    error_metric.to_csv("fforma-training/final-fforma-error.csv", index=False)
+
+
+def get_fforma_final_output(
+    fforma: BasicModel, models_dict: Dict[str, BasicModel]
+) -> pd.DataFrame:
+    """Get FFORMA final output"""
+    # FFORMA errors
+    fforma_errors = fforma.predictions.set_index("timeseries")
+    # Final dataset (sum)
+    final_output: pd.DataFrame = None
+    for model_name, model in models_dict.items():
+        # Only use values predicted in FFORMA
+        dtf = model.predictions[
+            model.predictions["timeseries"].isin(fforma_errors.index)
+        ]
+        aux = pd.DataFrame()
+        # Group by timeseries
+        for timeseries, predictions in dtf.groupby("timeseries"):
+            error = fforma_errors[model_name][timeseries]
+            aux = pd.concat([aux, predictions.iloc[:, 1:] * error])
+        # Update final_output
+        if final_output:
+            final_output += aux
+        else:
+            final_output = aux
+    final_output = pd.concat([dtf["timeseries"], final_output], axis=1)
+    # Final dataset (/fforma_errror)
+    limit = fforma_errors.shape[1] - len(models_dict)
+    total_error = fforma_errors.iloc[:, limit:].sum(axis=1)
+    aux = pd.DataFrame()
+    for timeseries, predictions in final_output.groupby("timeseries"):
+        error = total_error[timeseries]
+        aux = pd.concat([aux, predictions.iloc[:, 1:] / error])
+    final_output = pd.concat([final_output["timeseries"], aux], axis=1)
+    return final_output
 
 
 def train_fforma(
@@ -29,7 +111,7 @@ def train_fforma(
         train_output,
         test_features,
         test_output,
-    ) = _get_fforma_train_test_datasets(
+    ) = get_fforma_train_test_datasets(
         series, training_percentage_fforma, train_test_ratio_fforma, args
     )
     train_models(
@@ -40,13 +122,14 @@ def train_fforma(
     )
 
 
-def _get_fforma_train_test_datasets(
+def get_fforma_train_test_datasets(
     series: Dict[str, List[str]],
     training_percentage_fforma: float,
     train_test_ratio_fforma: float,
     args: Namespace,
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    fforma_dataset = generate_fforma_dataset(
+    """Get train and test fforma datasets"""
+    fforma_dataset, _ = generate_fforma_dataset(
         series, training_percentage_fforma, train_test_ratio_fforma, args
     )
     logger.debug("FFORMA dataset:\n%r", fforma_dataset)
@@ -70,7 +153,7 @@ def generate_fforma_dataset(
     training_percentage_fforma: float,
     train_test_ratio_fforma: float,
     args: Namespace,
-) -> pd.DataFrame:
+) -> Tuple[pd.DataFrame, Dict[str, BasicModel]]:
     """Generate FFORMA ensemble"""
     (
         train_features,
@@ -97,7 +180,7 @@ def generate_fforma_dataset(
     if not os.path.exists("fforma-training"):
         os.makedirs("fforma-training")
     df_fforma.to_csv("fforma-training/fforma.csv", index=False)
-    return df_fforma
+    return df_fforma, models_dict
 
 
 def _generate_timeseries_dict(

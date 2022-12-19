@@ -39,7 +39,8 @@ class BasicModel(ABC):
         self.train_output = train_output
         self.error_type = error_type
         self.hyper_params: Dict[str, HyperParams] = {}
-        self.predictions = Any
+        self.predictions: pd.DataFrame
+        self.test_output: pd.DataFrame
         self.fitted: HyperParams
         self.generate_hyperparams()
 
@@ -158,6 +159,7 @@ class ShiftedModel(BasicModel):
             )
         predictions.insert(0, "timeseries", test_features["timeseries"])
         self.predictions = predictions.set_axis(test_output.columns, axis=1)
+        self.test_output = test_output
         # Calculate errors
         error_metric = self.error_type.value(
             test_output, self.predictions, self.train_features
@@ -190,6 +192,7 @@ class MultioutputModel(BasicModel):
         )
         predictions.insert(0, "timeseries", test_features["timeseries"])
         self.predictions = predictions.set_axis(test_output.columns, axis=1)
+        self.test_output = test_output
         logger.debug(
             "Accuracy: %r",
             hyperparams["model"].score(

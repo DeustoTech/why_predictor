@@ -13,7 +13,11 @@ from dotenv import load_dotenv
 
 from .load_sets import find_csv_files
 from .models import Models
-from .training import select_hyperparameters, train_fforma
+from .training import (
+    final_fforma_prediction,
+    select_hyperparameters,
+    train_fforma,
+)
 
 logging.basicConfig(
     stream=sys.stdout,
@@ -47,7 +51,12 @@ def generate_parser() -> argparse.ArgumentParser:
         "-m",
         "--mode",
         dest="mode",
-        choices=["generate-errors", "generate-fforma", "full"],
+        choices=[
+            "generate-hyperparams",
+            "generate-fforma",
+            "evaluate-fforma",
+            "full",
+        ],
         default="full",
         help="Select the operation mode, by default it will run in full mode"
         + " that includes both generate-errors and generate fforma. "
@@ -158,6 +167,31 @@ def generate_parser() -> argparse.ArgumentParser:
         + "(1 - this value will be used for testing)",
     )
     argcomplete.autocomplete(parser)
+    evaluate_fforma = parser.add_argument_group("FFORMA evaluation")
+    evaluate_fforma.add_argument(
+        "--percentage-csv-files-for-fforma-eval",
+        dest="training_percentage_fforma_eval",
+        type=float,
+        default=os.getenv("TRAINING_PERCENTAGE_FFORMA_EVALUATION"),
+        help="Percentage of the CSV files that will be used for evaluation",
+    )
+    evaluate_fforma.add_argument(
+        "--train-test-ratio-fforma-eval",
+        dest="train_test_ratio_fforma_eval",
+        type=float,
+        default=os.getenv("TRAIN_TEST_RATIO_FFORMA_EVALUATION"),
+        help="ratio of samples used for evaluation"
+        + "(1 - this value will be used for evaluation)",
+    )
+    evaluate_fforma.add_argument(
+        "--error-type-fforma-eval",
+        dest="error_type_fforma_eval",
+        choices=["MAPE", "MAE", "RMSE", "SMAPE"],
+        type=str.upper,
+        default=os.getenv("ERROR_TYPE_FFORMA_EVALUATION"),
+        help="metric to calculate the error when evaluating "
+        + "the final output of FFORMA",
+    )
     return parser
 
 
@@ -174,17 +208,27 @@ def main() -> None:
 
     logger.debug("Args: %r", args)
     series = find_csv_files(args.dataset_basepath, args.dataset_dir_name)
-    # Execute select_hyperparameters if mode is [generate-errors or full]
-    if args.mode != "generate-fforma":
+    # Execute select_hyperparameters if mode is: generate-hyperparams or full
+    if args.mode in ["generate-hyperparams", "full"]:
         logger.info("* Selecting best hyperparameters...")
         select_hyperparameters(series, args, "model-training")
-    # Execute select_fforma if mode is [generate-fforma or full]
-    if args.mode != "generate-errors":
+    # Execute select_fforma if mode is:
+    # generate-hypeparams, generate-fforma or full
+    if args.mode in ["generate-hyperparam", "generate-errors", "full"]:
         logger.info("* Generating FFORMA...")
         train_fforma(
             series,
             args.training_percentage_fforma,
             args.train_test_ratio_fforma,
+            args,
+        )
+    # Execute final_fforma_prediction if mode is: evaluate-fforma or full
+    if args.mode in ["evaluate-fforma", "full"]:
+        logger.info("* Evaluating FFORMA...")
+        final_fforma_prediction(
+            series,
+            args.training_percentage_fforma_eval,
+            args.train_test_ratio_fforma_eval,
             args,
         )
 
