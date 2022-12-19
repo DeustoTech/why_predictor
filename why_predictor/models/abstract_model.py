@@ -6,6 +6,9 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, TypedDict
 
 import pandas as pd  # type: ignore
+import scikit_posthocs as sp  # type: ignore
+from matplotlib import pyplot as plt  # type: ignore
+from scipy.stats import friedmanchisquare  # type: ignore
 
 from ..errors import ErrorType
 
@@ -64,8 +67,33 @@ class BasicModel(ABC):
                 "errors": pd.DataFrame,
                 "median": 0.0,
             }
-            # TODO friendman with post-hoc
-            # https://stats.stackexchange.com/questions/467467/how-to-do-friedman-test-and-post-hoc-test-on-python
+
+    def __friendman_with_post_hoc(self, base_path: str):
+        # Create post-hoc directory
+        base_path = os.path.join(base_path, "post-hoc")
+        if not os.path.exists(base_path):
+            os.makedirs(base_path)
+        # Generate dataframe
+        aux = pd.DataFrame()
+        for model in self.hyper_params.values():
+            aux = pd.concat([aux, model["errors"].median(axis=1)], axis=1)
+        aux.columns = [x["name"] for x in self.hyper_params.values()]
+        # Calculate friedmanchisquare
+        f_test = friedmanchisquare(*[aux[k] for k in aux.columns])
+        logger.debug("Friedmanchisquare for %s: %r", self.name, f_test)
+        # Calculate post-hoc if p_value < 0.05
+        if f_test.pvalue < 0.05:
+            post_hoc = sp.posthoc_nemenyi_friedman(aux)
+            heatmap_args = {
+                "linewidths": 0.25,
+                "linecolor": "0.5",
+                "clip_on": False,
+                "square": True,
+                "cbar_ax_bbox": [0.80, 0.35, 0.04, 0.3],
+            }
+            sp.sign_plot(post_hoc, **heatmap_args)
+            filename = os.path.join(base_path, f"{self.short_name}.png")
+            plt.savefig(filename)
 
     @abstractmethod
     def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
@@ -105,13 +133,17 @@ class BasicModel(ABC):
 
     def save_errors(self, base_path: str) -> None:
         """Save errors"""
-        base_path = os.path.join(base_path, "errors")
-        if not os.path.exists(base_path):
-            os.makedirs(base_path)
+        # Create directory
+        error_path = os.path.join(base_path, "errors")
+        if not os.path.exists(error_path):
+            os.makedirs(error_path)
+        # Save hyperparam errors
         for hyperparams in self.hyper_params.values():
             name = f"{self.short_name}_{self.error_type}_{hyperparams['name']}"
-            filename = os.path.join(base_path, name)
+            filename = os.path.join(error_path, name)
             hyperparams["errors"].to_csv(filename, index=False)
+        # friendman with post-hoc
+        self.__friendman_with_post_hoc(base_path)
 
     def save_best_hyperparameters(self, base_path: str) -> None:
         """Save Best Hyper-parameters set"""

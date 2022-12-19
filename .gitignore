@@ -15,6 +15,9 @@ disk/
 model-training/
 fforma-training/
 
+# Libraries
+scikit_posthocs
+
 # Distribution / packaging
 .Python
 build/
