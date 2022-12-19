@@ -1,0 +1,27 @@
+name: Linter and type checks
+on: push
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    name: Checks
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+    - run: pip install --upgrade pip
+    - run: pip install "black<23" pylint mypy isort
+    - run: pip install -r requirements.txt
+
+    - name: Test black
+      run: black -l79 --diff --check $(git ls-files '*.py')
+
+    - name: Test pylint
+      run: pylint $(git ls-files '*.py')
+
+    - name: Test mypy
+      run: mypy --strict $(git ls-files '*.py')
+
+    - name: Test isort
+      run: isort -l79 -c --profile black $(git ls-files '*.py')
