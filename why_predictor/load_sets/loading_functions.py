@@ -3,6 +3,7 @@ import copy
 import glob
 import logging
 import os
+import math
 import random
 from typing import Dict, List, Tuple
 
@@ -112,8 +113,8 @@ def _get_train_test_dataframes(
     test_dict = {}
     for timeseries in mydict:
         dataset = mydict[timeseries]
-        limit = int(len(dataset) * train_ratio)
-        logger.debug("Limit %s: %d", timeseries, limit)
+        limit = math.ceil(len(dataset) * train_ratio)
+        logger.debug("Limit %s: %d [%d]", timeseries, limit, len(dataset))
         train_dict[timeseries] = dataset.iloc[:limit]
         test_dict[timeseries] = dataset.iloc[limit:]
         # .reset_index(drop=True)
