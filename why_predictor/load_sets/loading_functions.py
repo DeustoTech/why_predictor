@@ -6,6 +6,7 @@ import math
 import os
 import random
 from typing import Dict, List, Tuple
+from multiprocessing import Pool
 
 import pandas as pd  # type: ignore
 
@@ -53,6 +54,44 @@ def select_training_set(
     return training_set, no_training_set
 
 
+def _load_csv(
+        idx: int,
+        total: int,
+        name: str,
+        total_window: int,
+        filename: str
+) -> pd.DataFrame:
+    """Load and process timeseries CSV File"""
+    logger.debug(
+        "(%d/%d) loading: %s",
+        idx + 1,
+        total,
+        filename,
+    )
+    data = pd.read_csv(filename)
+    # Set column as 'timestamp' (Pandas get it as str)
+    data["timestamp"] = pd.to_datetime(data["timestamp"])
+    # Filter out values, we only want one value per hour
+    data = (
+        data.set_index("timestamp")
+        .resample("60T")
+        .sum()
+        .reset_index()
+        .reindex(columns=data.columns)
+    )
+    # Timeseries name
+    timeseries_name = (
+        f"{name}_{os.path.splitext(os.path.split(filename)[-1])[0]}"
+    )
+    # Generate rolling window values
+    matrix = []
+    for i in range(len(data) - total_window):
+        matrix.append(
+            [timeseries_name, *list(data["kWh"][i : i + total_window])]
+        )
+    return pd.DataFrame(matrix)
+
+
 def load_files(
     training_set: Dict[str, List[str]],
     num_features: int,
@@ -66,42 +105,18 @@ def load_files(
         logger.debug(
             "Dataset (%d/%d): %s", idxset + 1, len(training_set), name
         )
-        for idx, filename in enumerate(training_set[name]):
-            logger.debug(
-                "(%d/%d) loading: %s",
-                idx + 1,
-                len(training_set[name]),
-                filename,
-            )
-            data = pd.read_csv(filename)
-            # Set column as 'timestamp' (Pandas get it as str)
-            data["timestamp"] = pd.to_datetime(data["timestamp"])
-            # Filter out values, we only want one value per hour
-            data = (
-                data.set_index("timestamp")
-                .resample("60T")
-                .sum()
-                .reset_index()
-                .reindex(columns=data.columns)
-            )
-            # Timeseries name
-            timeseries_name = (
-                f"{name}_"
-                + f"{os.path.splitext(os.path.split(filename)[-1])[0]}"
-            )
-            # Generate rolling window values
-            for i in range(len(data) - total_window):
-                matrix.append(
-                    [timeseries_name, *list(data["kWh"][i : i + total_window])]
-                )
+        file_list = [
+            (i, len(training_set[name]), name, total_window, v)
+            for i, v in enumerate(training_set[name])
+        ]
+        with Pool() as pool:
+            df_list = pool.starmap(_load_csv, file_list)
+            matrix.extend(df_list)
     logger.debug("Generating DataFrame...")
-    data = pd.DataFrame(
-        matrix,
-        columns=[
-            "timeseries",
-            *[f"col{i}" for i in range(1, total_window + 1)],
-        ],
-    )
+    data = pd.concat(matrix, ignore_index=True)
+    data.columns = [
+        "timeseries", *[f"col{i}" for i in range(1, total_window + 1)]
+    ]
     logger.info("CSV files loaded.")
     return data
 
