@@ -6,9 +6,10 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, TypedDict
 
 import pandas as pd  # type: ignore
-import scikit_posthocs as sp  # type: ignore
 from matplotlib import pyplot as plt  # type: ignore
 from scipy.stats import friedmanchisquare  # type: ignore
+
+import scikit_posthocs as sp
 
 from ..errors import ErrorType
 
@@ -68,7 +69,10 @@ class BasicModel(ABC):
                 "median": 0.0,
             }
 
-    def __friendman_with_post_hoc(self, base_path: str):
+    def __friendman_with_post_hoc(self, base_path: str) -> None:
+        # Sanity check
+        if len(self.hyper_params) < 3:
+            return
         # Create post-hoc directory
         base_path = os.path.join(base_path, "post-hoc")
         if not os.path.exists(base_path):
@@ -76,7 +80,9 @@ class BasicModel(ABC):
         # Generate dataframe
         aux = pd.DataFrame()
         for model in self.hyper_params.values():
-            aux = pd.concat([aux, model["errors"].median(axis=1)], axis=1)
+            aux = pd.concat(
+                [aux, model["errors"].loc[:, 1:].mean(axis=1)], axis=1
+            )
         aux.columns = [x["name"] for x in self.hyper_params.values()]
         # Calculate friedmanchisquare
         f_test = friedmanchisquare(*[aux[k] for k in aux.columns])
