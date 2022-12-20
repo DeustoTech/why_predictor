@@ -81,7 +81,7 @@ class BasicModel(ABC):
         aux = pd.DataFrame()
         for model in self.hyper_params.values():
             aux = pd.concat(
-                [aux, model["errors"].loc[:, 1:].mean(axis=1)], axis=1
+                [aux, model["errors"].iloc[:, 1:].mean(axis=1)], axis=1
             )
         aux.columns = [x["name"] for x in self.hyper_params.values()]
         # Calculate friedmanchisquare
