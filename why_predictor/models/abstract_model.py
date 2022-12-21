@@ -6,10 +6,9 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, TypedDict
 
 import pandas as pd  # type: ignore
+import scikit_posthocs as sp  # type: ignore
 from matplotlib import pyplot as plt  # type: ignore
 from scipy.stats import friedmanchisquare  # type: ignore
-
-import scikit_posthocs as sp
 
 from ..errors import ErrorType
 

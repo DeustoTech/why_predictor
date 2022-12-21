@@ -2,7 +2,7 @@
 import logging
 import os
 from argparse import Namespace
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple
 
 import pandas as pd  # type: ignore
 
@@ -202,16 +202,18 @@ def _generate_timeseries_dict(
 def _generate_fforma_dataset(
     models_dict: Dict[str, BasicModel]
 ) -> pd.DataFrame:
+    # Load context
+    context = pd.read_csv("context.csv")
+    context.set_index("timeseries", inplace=True)
+    # Load timeseries dict
     timeseries_dict = _generate_timeseries_dict(models_dict)
-    column_names: List[Union[str, float]] = ["timeseries"]
-    column_names.extend(["c1", "c2", "c3"])  # TODO to be decided
-    column_names.extend([m.short_name for m in models_dict.values()])
-    df_fforma = pd.DataFrame(columns=column_names)
-    for timeseries_id, timeseries in timeseries_dict.items():
-        row_data: List[Union[str, float]] = [timeseries_id, 0.5, 0.5, 0.5]
-        row_data.extend(timeseries.values())
-        df_fforma = pd.concat(
-            [pd.DataFrame([row_data], columns=df_fforma.columns), df_fforma],
-            ignore_index=True,
-        )
-    return df_fforma
+    # Filter timeseries
+    context = context[context.index.isin(timeseries_dict.keys())]
+    # Generate errors
+    first_key = list(timeseries_dict.keys())[0]
+    errors = pd.DataFrame(
+        [[k, *v.values()] for k, v in timeseries_dict.items()],
+        columns=["timeseries", *timeseries_dict[first_key].keys()],
+    )
+    errors.set_index("timeseries", inplace=True)
+    return pd.concat([context, errors], axis=1).reset_index()
