@@ -5,8 +5,8 @@ import logging
 import math
 import os
 import random
-from typing import Dict, List, Tuple
 from multiprocessing import Pool
+from typing import Dict, List, Tuple
 
 import pandas as pd  # type: ignore
 
@@ -55,11 +55,7 @@ def select_training_set(
 
 
 def _load_csv(
-        idx: int,
-        total: int,
-        name: str,
-        total_window: int,
-        filename: str
+    idx: int, total: int, name: str, total_window: int, filename: str
 ) -> pd.DataFrame:
     """Load and process timeseries CSV File"""
     logger.debug(
@@ -68,7 +64,7 @@ def _load_csv(
         total,
         filename,
     )
-    data = pd.read_csv(filename)
+    data = pd.read_csv(filename, usecols=["timestamp", "kWh"])
     # Set column as 'timestamp' (Pandas get it as str)
     data["timestamp"] = pd.to_datetime(data["timestamp"])
     # Filter out values, we only want one value per hour
@@ -115,7 +111,8 @@ def load_files(
     logger.debug("Generating DataFrame...")
     data = pd.concat(matrix, ignore_index=True)
     data.columns = [
-        "timeseries", *[f"col{i}" for i in range(1, total_window + 1)]
+        "timeseries",
+        *[f"col{i}" for i in range(1, total_window + 1)],
     ]
     logger.info("CSV files loaded.")
     return data
