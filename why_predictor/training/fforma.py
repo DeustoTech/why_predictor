@@ -6,6 +6,7 @@ from typing import Dict, List, Tuple
 
 import pandas as pd  # type: ignore
 
+from .. import panda_utils as pdu
 from ..errors import ErrorType
 from ..load_sets import (
     get_train_and_test_datasets,
@@ -77,25 +78,25 @@ def get_fforma_final_output(
         dtf = model.predictions[
             model.predictions["timeseries"].isin(fforma_errors.index)
         ]
-        aux = pd.DataFrame()
+        aux = pdu.DataFrame()
         # Group by timeseries
         for timeseries, predictions in dtf.groupby("timeseries"):
             error = fforma_errors[model_name][timeseries]
-            aux = pd.concat([aux, predictions.iloc[:, 1:] * error])
+            aux = pdu.concat([aux, predictions.iloc[:, 1:] * error])
         # Update final_output
         if final_output:
             final_output += aux
         else:
             final_output = aux
-    final_output = pd.concat([dtf["timeseries"], final_output], axis=1)
+    final_output = pdu.concat([dtf["timeseries"], final_output], axis=1)
     # Final dataset (/fforma_errror)
     limit = fforma_errors.shape[1] - len(models_dict)
     total_error = fforma_errors.iloc[:, limit:].sum(axis=1)
-    aux = pd.DataFrame()
+    aux = pdu.DataFrame()
     for timeseries, predictions in final_output.groupby("timeseries"):
         error = total_error[timeseries]
-        aux = pd.concat([aux, predictions.iloc[:, 1:] / error])
-    final_output = pd.concat([final_output["timeseries"], aux], axis=1)
+        aux = pdu.concat([aux, predictions.iloc[:, 1:] / error])
+    final_output = pdu.concat([final_output["timeseries"], aux], axis=1)
     return final_output
 
 
@@ -203,7 +204,7 @@ def _generate_fforma_dataset(
     models_dict: Dict[str, BasicModel]
 ) -> pd.DataFrame:
     # Load context
-    context = pd.read_csv("context.csv")
+    context = pdu.read_csv("context.csv")
     context.set_index("timeseries", inplace=True)
     # Load timeseries dict
     timeseries_dict = _generate_timeseries_dict(models_dict)
@@ -211,9 +212,9 @@ def _generate_fforma_dataset(
     context = context[context.index.isin(timeseries_dict.keys())]
     # Generate errors
     first_key = list(timeseries_dict.keys())[0]
-    errors = pd.DataFrame(
+    errors = pdu.DataFrame(
         [[k, *v.values()] for k, v in timeseries_dict.items()],
         columns=["timeseries", *timeseries_dict[first_key].keys()],
     )
     errors.set_index("timeseries", inplace=True)
-    return pd.concat([context, errors], axis=1).reset_index()
+    return pdu.concat([context, errors], axis=1).reset_index()

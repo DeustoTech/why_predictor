@@ -8,7 +8,10 @@ import random
 from multiprocessing import Pool
 from typing import Dict, List, Optional, Tuple
 
+import numpy as np
 import pandas as pd  # type: ignore
+
+from .. import panda_utils as pdu
 
 logger = logging.getLogger("logger")
 
@@ -68,9 +71,12 @@ def _load_csv(
         counter[1],
         filename,
     )
-    data = pd.read_csv(filename, usecols=["timestamp", "kWh"])
+    data = pdu.read_csv(filename, usecols=["timestamp", "kWh"])
     # Set column as 'timestamp' (Pandas get it as str)
     data["timestamp"] = pd.to_datetime(data["timestamp"])
+    # Use watios instead of kwh
+    data["kWh"] = data["kWh"] * 1000
+    data["kWh"] = data.kWh.apply(np.uint16)
     # Filter out values, we only want one value per hour
     data = (
         data.set_index("timestamp")
@@ -90,7 +96,7 @@ def _load_csv(
             [timeseries_name, *list(data["kWh"][i : i + total_window])]
         )
 
-    dtf = pd.DataFrame(matrix)
+    dtf = pdu.DataFrame(matrix)
     matrix = []  # Reset
     if dataset_path:
         dtf.to_csv(os.path.join(dataset_path, os.path.split(filename)[1]))
@@ -118,7 +124,7 @@ def load_files(
             df_list = pool.starmap(_load_csv, file_list)
             matrix.extend(df_list)
     logger.debug("Generating DataFrame...")
-    data = pd.concat(matrix, ignore_index=True)
+    data = pdu.concat(matrix, ignore_index=True)
     data.columns = [
         "timeseries",
         *[f"col{i}" for i in range(1, total_window + 1)],
@@ -139,8 +145,8 @@ def _get_train_test_dataframes(
         train_dict[timeseries] = dataset.iloc[:limit]
         test_dict[timeseries] = dataset.iloc[limit:]
         # .reset_index(drop=True)
-    train = pd.concat(train_dict.values(), ignore_index=True)
-    test = pd.concat(test_dict.values(), ignore_index=True)
+    train = pdu.concat(train_dict.values(), ignore_index=True)
+    test = pdu.concat(test_dict.values(), ignore_index=True)
     return (train, test)
 
 
@@ -177,10 +183,10 @@ def split_fforma_in_train_and_test(
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Split the FFORMA dataset in train and test"""
     # Create a FFORMA Dataset with dataset column
-    newdata = pd.DataFrame(
+    newdata = pdu.DataFrame(
         [x[0] for x in data.iloc[:, 0].str.split("_").tolist()]
     )
-    newdata = pd.concat([newdata, data], ignore_index=True, axis=1)
+    newdata = pdu.concat([newdata, data], ignore_index=True, axis=1)
     newdata.columns = ["dataset", *data.columns]
     logger.debug("FFORMA with dataset column:\n%r", newdata)
     (
