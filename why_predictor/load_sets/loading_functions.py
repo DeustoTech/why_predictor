@@ -6,7 +6,7 @@ import math
 import os
 import random
 from multiprocessing import Pool
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import pandas as pd  # type: ignore
 
@@ -55,13 +55,17 @@ def select_training_set(
 
 
 def _load_csv(
-    idx: int, total: int, name: str, total_window: int, filename: str
+    counter: Tuple[int, int],
+    name: str,
+    total_window: int,
+    filename: str,
+    dataset_path: Optional[str] = None,
 ) -> pd.DataFrame:
     """Load and process timeseries CSV File"""
     logger.debug(
         "(%d/%d) loading: %s",
-        idx + 1,
-        total,
+        counter[0],
+        counter[1],
         filename,
     )
     data = pd.read_csv(filename, usecols=["timestamp", "kWh"])
@@ -85,7 +89,12 @@ def _load_csv(
         matrix.append(
             [timeseries_name, *list(data["kWh"][i : i + total_window])]
         )
-    return pd.DataFrame(matrix)
+
+    dtf = pd.DataFrame(matrix)
+    matrix = []  # Reset
+    if dataset_path:
+        dtf.to_csv(os.path.join(dataset_path, os.path.split(filename)[1]))
+    return dtf
 
 
 def load_files(
@@ -102,7 +111,7 @@ def load_files(
             "Dataset (%d/%d): %s", idxset + 1, len(training_set), name
         )
         file_list = [
-            (i, len(training_set[name]), name, total_window, v)
+            ((i + 1, len(training_set[name])), name, total_window, v)
             for i, v in enumerate(training_set[name])
         ]
         with Pool() as pool:
@@ -206,3 +215,34 @@ def get_train_and_test_datasets(
     return split_dataset_in_train_and_test(
         data, train_test_ratio, num_features
     )
+
+
+def process_and_save(
+    training_set: Dict[str, List[str]],
+    num_features: int,
+    num_predictions: int,
+) -> None:
+    """Load CSV files, process and save them to files"""
+    total_window = num_features + num_predictions
+    base_path = f"datasets/{num_features}x{num_predictions}/"
+    if not os.path.exists(base_path):
+        os.makedirs(base_path)
+    for idxset, name in enumerate(training_set):
+        dataset_path = os.path.join(base_path, name)
+        if not os.path.exists(dataset_path):
+            os.makedirs(dataset_path)
+        logger.debug(
+            "Dataset (%d/%d): %s", idxset + 1, len(training_set), name
+        )
+        file_list = [
+            (
+                (i + 1, len(training_set[name])),
+                name,
+                total_window,
+                v,
+                dataset_path,
+            )
+            for i, v in enumerate(training_set[name])
+        ]
+        with Pool() as pool:
+            pool.starmap(_load_csv, file_list)

@@ -11,7 +11,7 @@ from typing import Any
 import argcomplete  # type: ignore
 from dotenv import load_dotenv
 
-from .load_sets import find_csv_files
+from .load_sets import find_csv_files, process_and_save
 from .models import Models
 from .training import (
     final_fforma_prediction,
@@ -52,6 +52,7 @@ def generate_parser() -> argparse.ArgumentParser:
         "--mode",
         dest="mode",
         choices=[
+            "generate-csvs",
             "generate-hyperparams",
             "generate-fforma",
             "evaluate-fforma",
@@ -230,6 +231,14 @@ def main() -> None:
             args.training_percentage_fforma_eval,
             args.train_test_ratio_fforma_eval,
             args,
+        )
+    # Generate CSVs
+    if args.mode == "generate-csvs":
+        logger.info("* Generating CSVs...")
+        process_and_save(
+            series,
+            args.num_features,
+            args.num_predictions,
         )
 
 

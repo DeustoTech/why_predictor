@@ -4,6 +4,7 @@ from .loading_functions import (
     get_datasets,
     get_train_and_test_datasets,
     load_files,
+    process_and_save,
     select_training_set,
     split_dataset_in_train_and_test,
     split_fforma_in_train_and_test,
@@ -17,4 +18,5 @@ __all__ = [
     "split_dataset_in_train_and_test",
     "get_train_and_test_datasets",
     "split_fforma_in_train_and_test",
+    "process_and_save",
 ]
