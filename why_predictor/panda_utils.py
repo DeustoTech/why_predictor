@@ -13,8 +13,7 @@ def downcast(dtf: pd.DataFrame) -> pd.DataFrame:
     return dtf
 
 
-# ignore: invalid-name
-def DataFrame(
+def DataFrame(  # pylint: disable=W0631
     data: Optional[Any] = None, columns: Optional[Any] = None
 ) -> pd.DataFrame:
     """DataFrame wrapper"""
