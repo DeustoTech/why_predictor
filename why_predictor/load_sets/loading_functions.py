@@ -57,14 +57,28 @@ def select_training_set(
     return training_set, no_training_set
 
 
+def _generate_rolling_windows(
+    data: pd.DataFrame, dataset_name: str, timeseries_name: str, window: int
+) -> pd.DataFrame:
+    matrix = []
+    for i in range(len(data) - window):
+        matrix.append(
+            [dataset_name, timeseries_name, *list(data["kWh"][i : i + window])]
+        )
+
+    return pdu.DataFrame(matrix)
+
+
 def _load_csv(
     counter: Tuple[int, int],
-    name: str,
-    total_window: int,
-    filename: str,
+    names: Tuple[str, str],
+    window: Tuple[int, int],
+    train_test_ratio: float,
     dataset_path: Optional[str] = None,
-) -> pd.DataFrame:
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Load and process timeseries CSV File"""
+    dataset_name, filename = names
+    timeseries = os.path.split(filename)[-1]
     logger.debug(
         "(%d/%d) loading: %s",
         counter[0],
@@ -86,51 +100,84 @@ def _load_csv(
         .reindex(columns=data.columns)
     )
     # Timeseries name
-    timeseries_name = (
-        f"{name}_{os.path.splitext(os.path.split(filename)[-1])[0]}"
-    )
+    timeseries_name = os.path.splitext(timeseries)[0]
     # Generate rolling window values
-    matrix = []
-    for i in range(len(data) - total_window):
-        matrix.append(
-            [timeseries_name, *list(data["kWh"][i : i + total_window])]
-        )
-
-    dtf = pdu.DataFrame(matrix)
-    matrix = []  # Reset
+    dtf = _generate_rolling_windows(
+        data, dataset_name, timeseries_name, sum(window)
+    )
     if dataset_path:
-        dtf.to_csv(os.path.join(dataset_path, os.path.split(filename)[1]))
-    return dtf
+        dtf.to_csv(
+            os.path.join(dataset_path, os.path.split(filename)[1]), index=False
+        )
+    # Split dataframes
+    limit = math.ceil(len(dtf) * train_test_ratio)
+    test = dtf.iloc[limit:]
+    test.columns = [
+        "dataset",
+        "timeseries",
+        *[f"col{i}" for i in range(1, sum(window) + 1)],
+    ]
+    dtf = dtf.iloc[:limit]  # train
+    base_path = f"model-training/test/{dataset_name}/"
+    test.iloc[:, : window[0] + 2].to_csv(
+        os.path.join(base_path, "features", timeseries), index=False
+    )
+    test.drop(test.iloc[:, 2 : window[0] + 2], axis=1).to_csv(
+        os.path.join(base_path, "output", timeseries), index=False
+    )
+    return (
+        dtf.iloc[:, : window[0] + 2],
+        dtf.drop(dtf.iloc[:, 2 : window[0] + 2], axis=1),
+    )
 
 
 def load_files(
     training_set: Dict[str, List[str]],
     num_features: int,
     num_predictions: int,
-) -> pd.DataFrame:
+    train_test_ratio: float,
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Load training set"""
     logger.info("Loading CSV files...")
-    matrix = []
+    train_features = pdu.DataFrame()
+    train_output = pdu.DataFrame()
     total_window = num_features + num_predictions
+    base_path = "model-training/test/"
     for idxset, name in enumerate(training_set):
         logger.debug(
             "Dataset (%d/%d): %s", idxset + 1, len(training_set), name
         )
+        base_path = f"model-training/test/{name}"
+        if not os.path.exists(base_path):
+            os.makedirs(os.path.join(base_path, "features"))
+            os.makedirs(os.path.join(base_path, "output"))
         file_list = [
-            ((i + 1, len(training_set[name])), name, total_window, v)
+            (
+                (i + 1, len(training_set[name])),
+                (name, v),
+                (num_features, num_predictions),
+                train_test_ratio,
+            )
             for i, v in enumerate(training_set[name])
         ]
         with Pool() as pool:
             df_list = pool.starmap(_load_csv, file_list)
-            matrix.extend(df_list)
-    logger.debug("Generating DataFrame...")
-    data = pdu.concat(matrix, ignore_index=True)
-    data.columns = [
+            train_features = pdu.concat(
+                [train_features, *[x[0] for x in df_list]]
+            )
+            train_output = pdu.concat([train_output, *[x[1] for x in df_list]])
+    train_features.columns = [
+        "dataset",
         "timeseries",
-        *[f"col{i}" for i in range(1, total_window + 1)],
+        *[f"col{i}" for i in range(1, num_features + 1)],
+    ]
+    train_output.columns = [
+        "dataset",
+        "timeseries",
+        *[f"col{i}" for i in range(num_features + 1, total_window + 1)],
     ]
     logger.info("CSV files loaded.")
-    return data
+    return (train_features, train_output)
 
 
 def _get_train_test_dataframes(
@@ -180,46 +227,41 @@ def split_dataset_in_train_and_test(
 
 def split_fforma_in_train_and_test(
     data: pd.DataFrame, train_ratio: float, num_features: int
-) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Split the FFORMA dataset in train and test"""
     # Create a FFORMA Dataset with dataset column
-    newdata = pdu.DataFrame(
-        [x[0] for x in data.iloc[:, 0].str.split("_").tolist()]
+    limit = math.ceil(len(data) * train_ratio)
+    test = data.iloc[limit:]
+    base_path = "fforma-training/test/fforma/"
+    if not os.path.exists(base_path):
+        os.makedirs(os.path.join(base_path, "features"))
+        os.makedirs(os.path.join(base_path, "output"))
+    test.iloc[:, : num_features + 2].to_csv(
+        os.path.join(base_path, "features", "dataset"), index=False
     )
-    newdata = pdu.concat([newdata, data], ignore_index=True, axis=1)
-    newdata.columns = ["dataset", *data.columns]
-    logger.debug("FFORMA with dataset column:\n%r", newdata)
-    (
-        train_features,
-        train_output,
-        test_features,
-        test_output,
-    ) = split_dataset_in_train_and_test(
-        newdata, train_ratio, num_features, 2, "dataset"
+    test.drop(test.iloc[:, 2 : num_features + 2], axis=1).to_csv(
+        os.path.join(base_path, "output", "dataset"), index=False
     )
+    data = data.iloc[:limit]  # train
     return (
-        train_features.drop(["dataset"], axis=1),
-        train_output.drop(["dataset"], axis=1),
-        test_features.drop(["dataset"], axis=1),
-        test_output.drop(["dataset"], axis=1),
+        data.iloc[:, : num_features + 2],
+        data.drop(data.iloc[:, 2 : num_features + 2], axis=1),
     )
 
 
-def get_train_and_test_datasets(
+def get_train_datasets(
     series: Dict[str, List[str]],
     percentage: float,
     num_features: int,
     num_predictions: int,
     train_test_ratio: float,
-) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Generate train and test datasets"""
     # Select training set
     training_set, _ = select_training_set(series, percentage)
     # Load training set
-    data = load_files(training_set, num_features, num_predictions)
-    # Train and test datasets
-    return split_dataset_in_train_and_test(
-        data, train_test_ratio, num_features
+    return load_files(
+        training_set, num_features, num_predictions, train_test_ratio
     )
 
 
@@ -229,7 +271,6 @@ def process_and_save(
     num_predictions: int,
 ) -> None:
     """Load CSV files, process and save them to files"""
-    total_window = num_features + num_predictions
     base_path = f"datasets/{num_features}x{num_predictions}/"
     if not os.path.exists(base_path):
         os.makedirs(base_path)
@@ -243,9 +284,9 @@ def process_and_save(
         file_list = [
             (
                 (i + 1, len(training_set[name])),
-                name,
-                total_window,
-                v,
+                (name, v),
+                (num_features, num_predictions),
+                1.0,
                 dataset_path,
             )
             for i, v in enumerate(training_set[name])

@@ -1,98 +1,64 @@
 """Linear Regression model"""
 import logging
-from typing import Any, Dict, Optional
 
 import pandas as pd  # type: ignore
 from sklearn.linear_model import LinearRegression  # type: ignore
 from sklearn.multioutput import RegressorChain  # type: ignore
 
-from ..errors import ErrorType
-from .abstract_model import BasicModel, MultioutputModel, ShiftedModel
+from .abstract_model import NUM_HEADERS, MultioutputModel, ShiftedModel
 
 logger = logging.getLogger("logger")
 
 
-class LinearRegressionModel(BasicModel):
-    """Linear Regression Class"""
-
-    params: Dict[str, Any] = {}
-
-    def generate_hyperparams(self) -> None:
-        """Generate hyperparams"""
-        self.generate_hyperparams_objects([{}])
-
-
-class ShiftedLinearRegressor(LinearRegressionModel, ShiftedModel):
+class ShiftedLinearRegressor(ShiftedModel):
     """Shifted Linear Regressor"""
 
     name = "Shifted Linear Regression"
     short_name = "SHIFT_LR"
 
-    def __init__(
-        self,
-        train_features: pd.DataFrame,
-        train_output: pd.DataFrame,
-        error_type: ErrorType,
-        _: Optional[Dict[str, Any]] = None,
-    ):
-        super().__init__(train_features, train_output, error_type)
-
-    def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
+    def generate_model(
+        self, features: pd.DataFrame, output: pd.DataFrame
+    ) -> None:
         """Generate model"""
         # We train with only the column for the first hour
-        model = LinearRegression(**hyper_params, n_jobs=-1)
-        linear_model = model.fit(
-            self.train_features.drop("timeseries", axis=1),
-            self.train_output.iloc[:, 1],
+        shifted_lr_model = LinearRegression(**self.hyperparams, n_jobs=-1)
+        self._model = shifted_lr_model.fit(
+            features.drop(["dataset", "timeseries"], axis=1),
+            output.iloc[:, NUM_HEADERS],
         )
-        return linear_model
 
 
-class ChainedLinearRegressor(LinearRegressionModel, MultioutputModel):
+class ChainedLinearRegressor(MultioutputModel):
     """Chained Linear Regressor"""
 
     name = "Chained Linear Regression"
     short_name = "CHAIN_LR"
 
-    def __init__(
-        self,
-        train_features: pd.DataFrame,
-        train_output: pd.DataFrame,
-        error_type: ErrorType,
-        _: Optional[Dict[str, Any]] = None,
-    ):
-        super().__init__(train_features, train_output, error_type)
-
-    def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
+    def generate_model(
+        self, features: pd.DataFrame, output: pd.DataFrame
+    ) -> None:
         """Generate model"""
-        model = RegressorChain(LinearRegression(**hyper_params, n_jobs=-1))
-        chained_lr_model = model.fit(
-            self.train_features.drop("timeseries", axis=1),
-            self.train_output.drop("timeseries", axis=1),
+        chained_lr_model = RegressorChain(
+            LinearRegression(**self.hyperparams, n_jobs=-1)
         )
-        return chained_lr_model
+        self._model = chained_lr_model.fit(
+            features.drop(["dataset", "timeseries"], axis=1),
+            output.drop(["dataset", "timeseries"], axis=1),
+        )
 
 
-class MultioutputLinearRegressor(LinearRegressionModel, MultioutputModel):
+class MultioutputLinearRegressor(MultioutputModel):
     """Multioutput Linear Regressor"""
 
     name = "Multioutput Linear Regression"
     short_name = "MULTI_LR"
 
-    def __init__(
-        self,
-        train_features: pd.DataFrame,
-        train_output: pd.DataFrame,
-        error_type: ErrorType,
-        _: Optional[Dict[str, Any]] = None,
-    ):
-        super().__init__(train_features, train_output, error_type)
-
-    def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
+    def generate_model(
+        self, features: pd.DataFrame, output: pd.DataFrame
+    ) -> None:
         """Generate model"""
-        model = LinearRegression(**hyper_params, n_jobs=-1)
-        multi_linear_model = model.fit(
-            self.train_features.drop("timeseries", axis=1),
-            self.train_output.drop("timeseries", axis=1),
+        multi_lr_model = LinearRegression(**self.hyperparams, n_jobs=-1)
+        self._model = multi_lr_model.fit(
+            features.drop(["dataset", "timeseries"], axis=1),
+            output.drop(["dataset", "timeseries"], axis=1),
         )
-        return multi_linear_model

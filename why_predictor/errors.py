@@ -6,61 +6,52 @@ from typing import Any
 import numpy as np
 import pandas as pd  # type: ignore
 
+NUM_HEADERS = 2
+
 
 def calculate_mape2(
-    output: pd.DataFrame, predictions: pd.DataFrame, values: pd.DataFrame
+    output: pd.DataFrame, predictions: pd.DataFrame, mean: float
 ) -> Any:
     """Calculate MAPE2"""
-    mean = np.nanmean(values.iloc[:, 1:])
-    actual = output.iloc[:, 1:]
-    actual2 = actual[actual != 0].fillna(mean)
-    predicted = predictions.iloc[:, 1:]
-    # return np.absolute((actual - predicted) / actual2).sum() / len(actual)
-    return np.absolute((actual - predicted) / actual2)
+    output2 = output[output != 0].fillna(mean)
+    # return np.absolute((output - predictions) / output2).sum() / len(output)
+    return np.absolute((output - predictions) / output2)
 
 
 def calculate_mape(
-    output: pd.DataFrame, predictions: pd.DataFrame, _: pd.DataFrame = None
+    output: pd.DataFrame, predictions: pd.DataFrame, _: float = 0.0
 ) -> Any:
     """Calculate MAPE"""
-    actual = output.iloc[:, 1:]
-    predicted = predictions.iloc[:, 1:]
-    # return np.absolute((actual - predicted) / actual).sum() / len(actual)
-    return np.absolute((actual - predicted) / actual)
+    # return np.absolute((output - predictions) / output).sum() / len(output)
+    return np.absolute((output - predictions) / output)
 
 
 def calculate_mae(
-    output: pd.DataFrame, predictions: pd.DataFrame, _: pd.DataFrame = None
+    output: pd.DataFrame, predictions: pd.DataFrame, _: float = 0.0
 ) -> Any:
     """Calculate MAE"""
-    actual = output.iloc[:, 1:]
-    predicted = predictions.iloc[:, 1:]
-    # return np.absolute((actual - predicted)).sum() / len(actual)
-    return np.absolute((actual - predicted))
+    # return np.absolute((output - predictions)).sum() / len(output)
+    return np.absolute((output - predictions))
 
 
 def calculate_rmse(
-    output: pd.DataFrame, predictions: pd.DataFrame, _: pd.DataFrame = None
+    output: pd.DataFrame, predictions: pd.DataFrame, _: float = 0.0
 ) -> Any:
     """Calculate RMSE"""
-    actual = output.iloc[:, 1:]
-    predicted = predictions.iloc[:, 1:]
-    # return ((actual - predicted).pow(2).sum() / len(actual)).pow(1.0 / 2)
+    # return ((output - predictions).pow(2).sum() / len(output)).pow(1.0 / 2)
     return pd.DataFrame(
-        ((actual - predicted).pow(2).sum() / len(actual)).pow(1.0 / 2)
+        ((output - predictions).pow(2).sum() / len(output)).pow(1.0 / 2)
     )
 
 
 def calculate_smape(
-    output: pd.DataFrame, predictions: pd.DataFrame, _: pd.DataFrame = None
+    output: pd.DataFrame, predictions: pd.DataFrame, _: float = 0.0
 ) -> Any:
     """Calculate SMAPE"""
-    actual = output.iloc[:, 1:]
-    predicted = predictions.iloc[:, 1:]
     # return (
-    #     np.absolute(predicted - actual) / ((actual + predicted) / 2)
-    # ).sum() / len(actual)
-    return np.absolute(predicted - actual) / ((actual + predicted) / 2)
+    #     np.absolute(predictions - output) / ((output + predictions) / 2)
+    # ).sum() / len(output)
+    return np.absolute(predictions - output) / ((output + predictions) / 2)
 
 
 class ErrorType(Enum):

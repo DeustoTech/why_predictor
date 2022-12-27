@@ -1,5 +1,5 @@
 """Pandas utils"""
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 import pandas as pd  # type: ignore
 
@@ -27,6 +27,10 @@ def concat(
     return downcast(pd.concat(objs, axis=axis, ignore_index=ignore_index))
 
 
-def read_csv(filename: str, usecols: Optional[Any] = None) -> pd.DataFrame:
+def read_csv(
+    filename: str,
+    usecols: Optional[Any] = None,
+    header: Optional[int | List[int] | None | str] = "infer",
+) -> pd.DataFrame:
     """read_csv wrapper"""
-    return downcast(pd.read_csv(filename, usecols=usecols))
+    return downcast(pd.read_csv(filename, usecols=usecols, header=header))

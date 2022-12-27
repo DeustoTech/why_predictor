@@ -1,115 +1,64 @@
 """Linear Regression model"""
 import logging
-from typing import Any, Dict, List, Literal, Optional, TypedDict, cast
 
 import pandas as pd  # type: ignore
 from sklearn.multioutput import RegressorChain  # type: ignore
 from sklearn.neighbors import KNeighborsRegressor  # type: ignore
 
-from ..errors import ErrorType
-from .abstract_model import BasicModel, MultioutputModel, ShiftedModel
-from .utils import generate_hyperparams_from_keys, sanitize_params
+from .abstract_model import NUM_HEADERS, MultioutputModel, ShiftedModel
 
 logger = logging.getLogger("logger")
 
 
-KNNHyperParamKeys = Literal[
-    "n_neighbors",
-    "weights",
-    # "algorithm",
-    # "leaf_size",
-    # "p"
-]
-
-
-class KNNHyperParams(TypedDict):
-    """KNN HyperParams type"""
-
-    n_neighbors: List[int]
-    weights: List[str]
-    # algorithm: List[str]
-    # leaf_size: Dict[str, List[int]]
-    # p: List[int]
-
-
-class KNNRegressionModel(BasicModel):
-    """KNN Regression Class"""
-
-    params: KNNHyperParams = {
-        "n_neighbors": [5, 10, 15],  # TO fit
-        "weights": ["distance"],  # Fixed
-        # "algorithm": ["ball_tree", "kd_tree", "brute"],
-        # "leaf_size": {
-        #     "ball_tree": [15, 30, 45],
-        #     "kd_tree": [30],
-        #     "brute": [30],
-        # },
-        # "p": [1, 2],
-    }
-
-    def __init__(
-        self,
-        train_features: pd.DataFrame,
-        train_output: pd.DataFrame,
-        error_type: ErrorType,
-        params: Optional[KNNHyperParams] = None,
-    ):
-        self.__params = sanitize_params(params) if params else self.params
-        super().__init__(train_features, train_output, error_type)
-
-    def generate_hyperparams(self) -> None:
-        """Generate hyperparams"""
-        keys: List[KNNHyperParamKeys] = cast(
-            List[KNNHyperParamKeys], list(self.__params.keys())
-        )
-        hyperparams = generate_hyperparams_from_keys(self.__params, {}, keys)
-        self.generate_hyperparams_objects(hyperparams)
-
-
-class ShiftedKNNRegressor(KNNRegressionModel, ShiftedModel):
+class ShiftedKNNRegressor(ShiftedModel):
     """Shifted Chained KNN Regressor"""
 
     name = "Shifted KNN Regression"
     short_name = "SHIFT_KNN"
 
-    def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
+    def generate_model(
+        self, features: pd.DataFrame, output: pd.DataFrame
+    ) -> None:
         """Generate model"""
         # We train with only the column for the first hour
-        model = KNeighborsRegressor(**hyper_params, n_jobs=-1)
-        knn_model = model.fit(
-            self.train_features.drop("timeseries", axis=1),
-            self.train_output.iloc[:, 1],
+        shifted_knn_model = KNeighborsRegressor(**self.hyperparams, n_jobs=-1)
+        self._model = shifted_knn_model.fit(
+            features.drop(["dataset", "timeseries"], axis=1),
+            output.iloc[:, NUM_HEADERS],
         )
-        return knn_model
 
 
-class ChainedKNNRegressor(KNNRegressionModel, MultioutputModel):
+class ChainedKNNRegressor(MultioutputModel):
     """Chained KNN Regressor"""
 
     name = "Chained KNN Regression"
     short_name = "CHAIN_KNN"
 
-    def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
+    def generate_model(
+        self, features: pd.DataFrame, output: pd.DataFrame
+    ) -> None:
         """Generate model"""
-        model = RegressorChain(KNeighborsRegressor(**hyper_params, n_jobs=-1))
-        chained_knn_model = model.fit(
-            self.train_features.drop("timeseries", axis=1),
-            self.train_output.drop("timeseries", axis=1),
+        chained_knn_model = RegressorChain(
+            KNeighborsRegressor(**self.hyperparams, n_jobs=-1)
         )
-        return chained_knn_model
+        self._model = chained_knn_model.fit(
+            features.drop(["dataset", "timeseries"], axis=1),
+            output.drop(["dataset", "timeseries"], axis=1),
+        )
 
 
-class MultioutputKNNRegressor(KNNRegressionModel, MultioutputModel):
+class MultioutputKNNRegressor(MultioutputModel):
     """Multioutput KNN Regressor"""
 
     name = "Multioutput KNN Regression"
     short_name = "MULTI_KNN"
 
-    def generate_model(self, hyper_params: Dict[str, Any]) -> Any:
+    def generate_model(
+        self, features: pd.DataFrame, output: pd.DataFrame
+    ) -> None:
         """Generate model"""
-        model = KNeighborsRegressor(**hyper_params, n_jobs=-1)
-        multi_knn_model = model.fit(
-            self.train_features.drop("timeseries", axis=1),
-            self.train_output.drop("timeseries", axis=1),
+        multi_knn_model = KNeighborsRegressor(**self.hyperparams, n_jobs=-1)
+        self._model = multi_knn_model.fit(
+            features.drop(["dataset", "timeseries"], axis=1),
+            output.drop(["dataset", "timeseries"], axis=1),
         )
-        return multi_knn_model

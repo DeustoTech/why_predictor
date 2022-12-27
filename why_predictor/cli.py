@@ -211,11 +211,13 @@ def main() -> None:
     series = find_csv_files(args.dataset_basepath, args.dataset_dir_name)
     # Execute select_hyperparameters if mode is: generate-hyperparams or full
     if args.mode in ["generate-hyperparams", "full"]:
+        print()
         logger.info("* Selecting best hyperparameters...")
-        select_hyperparameters(series, args, "model-training")
+        select_hyperparameters(series, args)
     # Execute select_fforma if mode is:
     # generate-hypeparams, generate-fforma or full
-    if args.mode in ["generate-hyperparam", "generate-errors", "full"]:
+    if args.mode in ["generate-hyperparams", "generate-fforma", "full"]:
+        print()
         logger.info("* Generating FFORMA...")
         train_fforma(
             series,
@@ -225,6 +227,7 @@ def main() -> None:
         )
     # Execute final_fforma_prediction if mode is: evaluate-fforma or full
     if args.mode in ["evaluate-fforma", "full"]:
+        print()
         logger.info("* Evaluating FFORMA...")
         final_fforma_prediction(
             series,
@@ -234,6 +237,7 @@ def main() -> None:
         )
     # Generate CSVs
     if args.mode == "generate-csvs":
+        print()
         logger.info("* Generating CSVs...")
         process_and_save(
             series,

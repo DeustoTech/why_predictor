@@ -2,7 +2,7 @@
 from .loading_functions import (
     find_csv_files,
     get_datasets,
-    get_train_and_test_datasets,
+    get_train_datasets,
     load_files,
     process_and_save,
     select_training_set,
@@ -16,7 +16,7 @@ __all__ = [
     "select_training_set",
     "load_files",
     "split_dataset_in_train_and_test",
-    "get_train_and_test_datasets",
+    "get_train_datasets",
     "split_fforma_in_train_and_test",
     "process_and_save",
 ]
