@@ -94,7 +94,7 @@ class BasicModelGroup(ABC):
     def fit(self) -> None:
         """Generate predictions"""
         logger.debug("Calculating %s...", self.name)
-        median_values = []
+        median_values: List[Tuple[float, BasicModel]] = []
         for model in self.hyper_params.values():
             median_error = (
                 model.calculate_errors(

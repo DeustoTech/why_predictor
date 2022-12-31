@@ -9,9 +9,9 @@ from argparse import Namespace
 from typing import Any, Dict, List, Tuple
 
 import pandas as pd  # type: ignore
+import scikit_posthocs as sp  # type: ignore
 from matplotlib import pyplot as plt  # type: ignore
 from scipy.stats import friedmanchisquare  # type: ignore
-import scikit_posthocs as sp  # type: ignore
 
 from .. import panda_utils as pdu
 from ..errors import ErrorType
