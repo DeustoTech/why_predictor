@@ -24,7 +24,9 @@ def concat(
     objs: Any, axis: int = 0, ignore_index: bool = False
 ) -> pd.DataFrame:
     """concat wrapper"""
-    return downcast(pd.concat(objs, axis=axis, ignore_index=ignore_index))
+    return downcast(
+        pd.concat(objs, axis=axis, ignore_index=ignore_index, copy=False)
+    )
 
 
 def read_csv(
