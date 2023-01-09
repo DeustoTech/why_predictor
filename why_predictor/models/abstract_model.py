@@ -24,7 +24,7 @@ class BasicModel(ABC):
 
     def __init__(self, hyperparams: Any, base_path: str):
         self.hyperparams = hyperparams
-        self.paramsname = f"{self.name}_{json.dumps(hyperparams)}"
+        self.paramsname = f"{self.short_name}_{json.dumps(hyperparams)}"
         self._model: Optional[Any] = None
         self.base_path = base_path
         self.path = os.path.join(base_path, "models", self.paramsname)
@@ -107,7 +107,7 @@ class BasicModel(ABC):
             ignore_index=True,
             axis=1,
         ).rename(
-            columns={0: "dataset", 1: "timeseries", 2: self.short_name}
+            columns={0: "dataset", 1: "timeseries", 2: self.paramsname}
         ).to_csv(
             os.path.join(base_path, "sum_errors", f"{self.paramsname}.csv"),
             index=False,

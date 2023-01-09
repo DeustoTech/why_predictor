@@ -9,10 +9,9 @@ from argparse import Namespace
 from typing import Any, Dict, List, Tuple
 
 import pandas as pd  # type: ignore
+import scikit_posthocs as sp  # type: ignore
 from matplotlib import pyplot as plt  # type: ignore
 from scipy.stats import friedmanchisquare  # type: ignore
-
-import scikit_posthocs as sp  # type: ignore
 
 from .. import panda_utils as pdu
 from ..errors import ErrorType
@@ -32,6 +31,7 @@ def select_hyperparameters(
         os.path.join(base_path, "errors"),
         os.path.join(base_path, "post-hoc"),
         os.path.join(base_path, "test"),
+        os.path.join(base_path, "train"),
     ]:
         if os.path.exists(check_path):
             shutil.rmtree(check_path)
@@ -140,7 +140,9 @@ def friedman_test_with_post_hoc(
     if f_test.pvalue < 0.05:
         new_columns = dict(zip(string.ascii_uppercase, columns))
         friedman_df.columns = new_columns.keys()
-        post_hoc = sp.posthoc_nemenyi_friedman(friedman_df)
+        post_hoc = sp.posthoc_nemenyi_friedman(
+            friedman_df.reset_index().iloc[:, 2:]
+        )
         heatmap_args = {
             "linewidths": 0.25,
             "linecolor": "0.5",
