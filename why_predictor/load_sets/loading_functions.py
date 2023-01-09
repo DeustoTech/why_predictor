@@ -118,13 +118,6 @@ def _load_csv(
         *[f"col{i}" for i in range(1, sum(window) + 1)],
     ]
     dtf = dtf.iloc[:limit]  # train
-    logger.debug(
-        "%s - %s => train: %d, test: %d",
-        dataset_name,
-        timeseries,
-        len(dtf),
-        len(test),
-    )
     base_path = f"model-training/test/{dataset_name}/"
     test.iloc[:, : window[0] + 2].to_csv(
         os.path.join(base_path, "features", timeseries), index=False
