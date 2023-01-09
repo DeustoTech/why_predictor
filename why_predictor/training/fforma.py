@@ -77,6 +77,7 @@ def _generate_fforma_final_output(
     error_filename = "fforma-training/evaluation_errors.csv"
     if os.path.exists(error_filename):
         os.remove(error_filename)
+    logger.debug("Fforma test_output:\n%r", fforma_test_output)
     for dataset in fforma_test_output.index:
         test_features = pdu.read_csv(
             f"model-training/test/{dataset[0]}/features/{dataset[1]}.csv"
@@ -88,13 +89,14 @@ def _generate_fforma_final_output(
         for model in models.values():
             value = model.make_predictions(test_features, test_output)
             value = value * fforma_test_output[model.short_name][dataset]
-            if final_output:
+            if final_output is not None:
                 final_output += value
             else:
                 final_output = value
             model.clear_model()
+        fforma_test_output["sum"] = fforma_test_output.sum(axis=1)
         final_output = final_output / fforma_test_output["sum"][dataset]
-        logger.debug("FInal output\n%r", final_output)
+        logger.debug("Final output\n%r", final_output)
         error.value(
             test_output.iloc[:, 2:],
             final_output,
@@ -125,7 +127,7 @@ def train_fforma(
             shutil.rmtree(check_path)
     # Train models
     train_to_fit_hyperparameters(
-        args.models_training,
+        args.models_fforma,
         get_fforma_train_test_datasets(
             series, training_percentage_fforma, train_test_ratio_fforma, args
         ),
@@ -184,6 +186,8 @@ def get_datasets_and_dict_trained_models(
     train_datasets, test_datasets = _generate_train_test_fforma_datasets(
         dataset_grouped_list, train_test_ratio_fforma
     )
+    logger.debug("Train datasets: %r", train_datasets)
+    logger.debug("Test datasets: %r", test_datasets)
     del dataset_grouped_list
     # Load context
     train_features = pdu.read_csv("context.csv")
@@ -262,8 +266,8 @@ def _generate_train_test_fforma_datasets(
             train_values.append(values.pop(random.randint(0, len(values) - 1)))
         train_datasets.append((dataset, train_values))
     return (
-        [row for x in train_datasets for row in x[1]],
-        [row for x in test_datasets for row in x[1]],
+        [(row[0], str(row[1])) for x in train_datasets for row in x[1]],
+        [(row[0], str(row[1])) for x in test_datasets for row in x[1]],
     )
 
 
