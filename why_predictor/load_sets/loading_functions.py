@@ -34,7 +34,7 @@ def find_csv_files(basepath: str, dirname: str) -> Dict[str, List[str]]:
     series: Dict[str, List[str]] = {}
     datasets = get_datasets(basepath, dirname)
     for name in datasets:
-        series[name] = glob.glob(f"{basepath}/{name}/{dirname}/*.csv")
+        series[name] = glob.glob(f"{basepath}/{name}/{dirname}/*.csv.gz")
     logger.info("CSV files found.")
     return series
 
@@ -102,6 +102,8 @@ def _load_csv(
     )
     # Timeseries name
     timeseries_name = os.path.splitext(timeseries)[0]
+    if timeseries_name.endswith("csv"):
+        timeseries_name = os.path.splitext(timeseries_name)[0]
     # Generate rolling window values
     dtf = _generate_rolling_windows(
         data, dataset_name, timeseries_name, sum(window)
@@ -123,23 +125,23 @@ def _load_csv(
     dtf = dtf.iloc[:limit]  # train
     base_path = f"model-training/test/{dataset_name}/"
     test.iloc[:, : window[0] + 2].to_csv(
-        os.path.join(base_path, "features", f"{timeseries}.gz"),
+        os.path.join(base_path, "features", f"{timeseries}"),
         index=False,
         compression={"method": "gzip", "compresslevel": 1, "mtime": 1},
     )
     test.drop(test.iloc[:, 2 : window[0] + 2], axis=1).to_csv(
-        os.path.join(base_path, "output", f"{timeseries}.gz"),
+        os.path.join(base_path, "output", f"{timeseries}"),
         index=False,
         compression={"method": "gzip", "compresslevel": 1, "mtime": 1},
     )
     base_path = f"model-training/train/{dataset_name}/"
     dtf.iloc[:, : window[0] + 2].to_csv(
-        os.path.join(base_path, "features", f"{timeseries}.gz"),
+        os.path.join(base_path, "features", f"{timeseries}"),
         index=False,
         compression={"method": "gzip", "compresslevel": 1, "mtime": 1},
     )
     dtf.drop(dtf.iloc[:, 2 : window[0] + 2], axis=1).to_csv(
-        os.path.join(base_path, "output", f"{timeseries}.gz"),
+        os.path.join(base_path, "output", f"{timeseries}"),
         index=False,
         compression={"method": "gzip", "compresslevel": 1, "mtime": 1},
     )
@@ -227,7 +229,7 @@ def _concat_csvs(dt_list: List[Tuple[str, str]]) -> None:
             for subfolder in ["features", "output"]:
                 dtf = pdu.read_csv(
                     os.path.join(
-                        base_path, dataset, subfolder, f"{timeseries}.gz"
+                        base_path, dataset, subfolder, f"{timeseries}"
                     )
                 )
                 dtf.iloc[:, 0:2].to_csv(
