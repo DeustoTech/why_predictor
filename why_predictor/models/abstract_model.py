@@ -74,17 +74,17 @@ class BasicModel(ABC):
         """Calculate Errors"""
         base_path = self.base_path
         error_filename = os.path.join(
-            base_path, "errors", f"{error.name}_{self.paramsname}.csv"
+            base_path, "errors", f"{error.name}_{self.paramsname}.csv.gz"
         )
         if os.path.exists(error_filename):
             os.remove(error_filename)
         columns_df = pd.DataFrame()
         for dataset, timeseries in datasets:
             test_features = pdu.read_csv(
-                f"{base_path}/test/{dataset}/features/{timeseries}.csv"
+                f"{base_path}/test/{dataset}/features/{timeseries}.csv.gz"
             )
             test_output = pdu.read_csv(
-                f"{base_path}/test/{dataset}/output/{timeseries}.csv"
+                f"{base_path}/test/{dataset}/output/{timeseries}.csv.gz"
             )
             predictions = self.make_predictions(test_features, test_output)
             error.value(
@@ -109,7 +109,7 @@ class BasicModel(ABC):
         ).rename(
             columns={0: "dataset", 1: "timeseries", 2: self.paramsname}
         ).to_csv(
-            os.path.join(base_path, "sum_errors", f"{self.paramsname}.csv"),
+            os.path.join(base_path, "sum_errors", f"{self.paramsname}.csv.gz"),
             index=False,
         )
         return errors
@@ -124,10 +124,10 @@ class BasicModel(ABC):
         """Calculate timeseries's error for this model"""
         dataset, timeseries = data
         test_features = pdu.read_csv(
-            f"{self.base_path}/test/{dataset}/features/{timeseries}.csv"
+            f"{self.base_path}/test/{dataset}/features/{timeseries}.csv.gz"
         )
         test_output = pdu.read_csv(
-            f"{self.base_path}/test/{dataset}/output/{timeseries}.csv"
+            f"{self.base_path}/test/{dataset}/output/{timeseries}.csv.gz"
         )
         predictions = self.make_predictions(test_features, test_output)
         if not keep_model:

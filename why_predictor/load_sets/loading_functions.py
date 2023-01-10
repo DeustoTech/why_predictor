@@ -108,7 +108,9 @@ def _load_csv(
     )
     if dataset_path:
         dtf.to_csv(
-            os.path.join(dataset_path, os.path.split(filename)[1]), index=False
+            os.path.join(dataset_path, f"{os.path.split(filename)[1]}.gz"),
+            index=False,
+            compression={"method": "gzip", "compresslevel": 1, "mtime": 1},
         )
     # Split dataframes
     limit = math.ceil(len(dtf) * train_test_ratio)
@@ -121,17 +123,25 @@ def _load_csv(
     dtf = dtf.iloc[:limit]  # train
     base_path = f"model-training/test/{dataset_name}/"
     test.iloc[:, : window[0] + 2].to_csv(
-        os.path.join(base_path, "features", timeseries), index=False
+        os.path.join(base_path, "features", f"{timeseries}.gz"),
+        index=False,
+        compression={"method": "gzip", "compresslevel": 1, "mtime": 1},
     )
     test.drop(test.iloc[:, 2 : window[0] + 2], axis=1).to_csv(
-        os.path.join(base_path, "output", timeseries), index=False
+        os.path.join(base_path, "output", f"{timeseries}.gz"),
+        index=False,
+        compression={"method": "gzip", "compresslevel": 1, "mtime": 1},
     )
     base_path = f"model-training/train/{dataset_name}/"
     dtf.iloc[:, : window[0] + 2].to_csv(
-        os.path.join(base_path, "features", timeseries), index=False
+        os.path.join(base_path, "features", f"{timeseries}.gz"),
+        index=False,
+        compression={"method": "gzip", "compresslevel": 1, "mtime": 1},
     )
     dtf.drop(dtf.iloc[:, 2 : window[0] + 2], axis=1).to_csv(
-        os.path.join(base_path, "output", timeseries), index=False
+        os.path.join(base_path, "output", f"{timeseries}.gz"),
+        index=False,
+        compression={"method": "gzip", "compresslevel": 1, "mtime": 1},
     )
     return dataset_name, timeseries
 
@@ -143,7 +153,7 @@ def _remove_files() -> None:
             for header_values in ["header", "values"]:
                 rmpath = os.path.join(
                     base_path,
-                    f"{test_train}_{feat_output}_{header_values}.csv",
+                    f"{test_train}_{feat_output}_{header_values}.csv.gz",
                 )
                 try:
                     os.remove(os.path.join(rmpath))
@@ -184,15 +194,15 @@ def load_files(
             shutil.rmtree(os.path.join("model-training", "train", name))
     train_features = pdu.concat(
         [
-            pdu.read_csv("model-training/train_features_header.csv"),
-            pdu.read_csv("model-training/train_features_values.csv"),
+            pdu.read_csv("model-training/train_features_header.csv.gz"),
+            pdu.read_csv("model-training/train_features_values.csv.gz"),
         ],
         axis=1,
     )
     train_output = pdu.concat(
         [
-            pdu.read_csv("model-training/train_output_header.csv"),
-            pdu.read_csv("model-training/train_output_values.csv"),
+            pdu.read_csv("model-training/train_output_header.csv.gz"),
+            pdu.read_csv("model-training/train_output_values.csv.gz"),
         ],
         axis=1,
     )
@@ -216,23 +226,35 @@ def _concat_csvs(dt_list: List[Tuple[str, str]]) -> None:
         for dataset, timeseries in dt_list:
             for subfolder in ["features", "output"]:
                 dtf = pdu.read_csv(
-                    os.path.join(base_path, dataset, subfolder, timeseries)
+                    os.path.join(
+                        base_path, dataset, subfolder, f"{timeseries}.gz"
+                    )
                 )
                 dtf.iloc[:, 0:2].to_csv(
                     os.path.join(
-                        "model-training", f"{folder}_{subfolder}_header.csv"
+                        "model-training", f"{folder}_{subfolder}_header.csv.gz"
                     ),
                     mode="a",
                     header=False,
                     index=False,
+                    compression={
+                        "method": "gzip",
+                        "compresslevel": 1,
+                        "mtime": 1,
+                    },
                 )
                 dtf.iloc[:, 2:].to_csv(
                     os.path.join(
-                        "model-training", f"{folder}_{subfolder}_values.csv"
+                        "model-training", f"{folder}_{subfolder}_values.csv.gz"
                     ),
                     mode="a",
                     header=False,
                     index=False,
+                    compression={
+                        "method": "gzip",
+                        "compresslevel": 1,
+                        "mtime": 1,
+                    },
                 )
 
 
@@ -293,10 +315,14 @@ def split_fforma_in_train_and_test(
         os.makedirs(os.path.join(base_path, "features"))
         os.makedirs(os.path.join(base_path, "output"))
     test.iloc[:, : num_features + 2].to_csv(
-        os.path.join(base_path, "features", "dataset"), index=False
+        os.path.join(base_path, "features", "dataset"),
+        index=False,
+        compression={"method": "gzip", "compresslevel": 1, "mtime": 1},
     )
     test.drop(test.iloc[:, 2 : num_features + 2], axis=1).to_csv(
-        os.path.join(base_path, "output", "dataset"), index=False
+        os.path.join(base_path, "output", "dataset"),
+        index=False,
+        compression={"method": "gzip", "compresslevel": 1, "mtime": 1},
     )
     data = data.iloc[:limit]  # train
     return (

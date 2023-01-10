@@ -53,9 +53,6 @@ def final_fforma_prediction(
         args.models_fforma,
         base_path="fforma-training",
     )
-    # Get timeseries
-    logger.debug("FFORMA train features:\n%s", train_features)
-    logger.debug("FFORMA train output:\n%s", train_output)
     # Delete train dataset to free memory
     del train_features
     del train_output
@@ -63,7 +60,7 @@ def final_fforma_prediction(
     _generate_fforma_final_output(
         models,
         pdu.read_csv(
-            "fforma-training/test/fforma/output/dataset.csv"
+            "fforma-training/test/fforma/output/dataset.csv.gz"
         ).set_index(["dataset", "timeseries"]),
         ErrorType[args.error_type_fforma],
     )
@@ -74,16 +71,16 @@ def _generate_fforma_final_output(
     fforma_test_output: pd.DataFrame,
     error: ErrorType,
 ) -> None:
-    error_filename = "fforma-training/evaluation_errors.csv"
+    error_filename = "fforma-training/evaluation_errors.csv.gz"
     if os.path.exists(error_filename):
         os.remove(error_filename)
     logger.debug("Fforma test_output:\n%r", fforma_test_output)
     for dataset in fforma_test_output.index:
         test_features = pdu.read_csv(
-            f"model-training/test/{dataset[0]}/features/{dataset[1]}.csv"
+            f"model-training/test/{dataset[0]}/features/{dataset[1]}.csv.gz"
         )
         test_output = pdu.read_csv(
-            f"model-training/test/{dataset[0]}/output/{dataset[1]}.csv"
+            f"model-training/test/{dataset[0]}/output/{dataset[1]}.csv.gz"
         )
         final_output: pd.DataFrame = None
         for model in models.values():
@@ -188,8 +185,6 @@ def get_datasets_and_dict_trained_models(
     train_datasets, test_datasets = _generate_train_test_fforma_datasets(
         dataset_grouped_list, train_test_ratio_fforma
     )
-    logger.debug("Train datasets: %r", train_datasets)
-    logger.debug("Test datasets: %r", test_datasets)
     del dataset_grouped_list
     # Load context
     train_features = pdu.read_csv("context.csv")
@@ -204,7 +199,7 @@ def get_datasets_and_dict_trained_models(
     train_features[
         train_features.index.isin(test_datasets)
     ].reset_index().to_csv(
-        os.path.join(fforma_base_path, "features", "dataset.csv"),
+        os.path.join(fforma_base_path, "features", "dataset.csv.gz"),
         index=False,
     )
     # Generate train features dataset
@@ -292,7 +287,7 @@ def _generate_fforma_output_dataset(
     result = pdu.concat(dtfs, axis=1)
     if fforma_base_path:
         result.to_csv(
-            os.path.join(fforma_base_path, "output", "dataset.csv"),
+            os.path.join(fforma_base_path, "output", "dataset.csv.gz"),
             index=False,
         )
     return result
