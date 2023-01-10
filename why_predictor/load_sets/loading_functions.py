@@ -5,6 +5,7 @@ import logging
 import math
 import os
 import random
+import shutil
 from multiprocessing import Pool
 from typing import Dict, List, Optional, Tuple
 
@@ -136,22 +137,18 @@ def _load_csv(
 
 
 def _remove_files() -> None:
-    try:
-        os.remove("model-training/features_header.csv")
-    except OSError:
-        pass
-    try:
-        os.remove("model-training/features_values.csv")
-    except OSError:
-        pass
-    try:
-        os.remove("model-training/output_header.csv")
-    except OSError:
-        pass
-    try:
-        os.remove("model-training/output_values.csv")
-    except OSError:
-        pass
+    base_path = "model-training"
+    for test_train in ["test", "train"]:
+        for feat_output in ["features", "output"]:
+            for header_values in ["header", "values"]:
+                rmpath = os.path.join(
+                    base_path,
+                    f"{test_train}_{feat_output}_{header_values}.csv",
+                )
+                try:
+                    os.remove(os.path.join(rmpath))
+                except OSError:
+                    pass
 
 
 def load_files(
@@ -184,17 +181,18 @@ def load_files(
         ]
         with Pool() as pool:
             _concat_csvs(pool.starmap(_load_csv, file_list))
+            shutil.rmtree(os.path.join("model-training", "train", name))
     train_features = pdu.concat(
         [
-            pdu.read_csv("model-training/features_header.csv"),
-            pdu.read_csv("model-training/features_values.csv"),
+            pdu.read_csv("model-training/train_features_header.csv"),
+            pdu.read_csv("model-training/train_features_values.csv"),
         ],
         axis=1,
     )
     train_output = pdu.concat(
         [
-            pdu.read_csv("model-training/output_header.csv"),
-            pdu.read_csv("model-training/output_values.csv"),
+            pdu.read_csv("model-training/train_output_header.csv"),
+            pdu.read_csv("model-training/train_output_values.csv"),
         ],
         axis=1,
     )
@@ -221,13 +219,17 @@ def _concat_csvs(dt_list: List[Tuple[str, str]]) -> None:
                     os.path.join(base_path, dataset, subfolder, timeseries)
                 )
                 dtf.iloc[:, 0:2].to_csv(
-                    os.path.join("model-training", f"{subfolder}_header.csv"),
+                    os.path.join(
+                        "model-training", f"{folder}_{subfolder}_header.csv"
+                    ),
                     mode="a",
                     header=False,
                     index=False,
                 )
                 dtf.iloc[:, 2:].to_csv(
-                    os.path.join("model-training", f"{subfolder}_values.csv"),
+                    os.path.join(
+                        "model-training", f"{folder}_{subfolder}_values.csv"
+                    ),
                     mode="a",
                     header=False,
                     index=False,

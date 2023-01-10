@@ -125,6 +125,8 @@ def train_fforma(
     ]:
         if os.path.exists(check_path):
             shutil.rmtree(check_path)
+    if os.path.exists("model-training/test"):
+        shutil.rmtree("model-training/test")
     # Train models
     train_to_fit_hyperparameters(
         args.models_fforma,
