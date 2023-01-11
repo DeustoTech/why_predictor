@@ -198,19 +198,23 @@ def load_files(
         with Pool() as pool:
             _concat_csvs(pool.starmap(_load_csv, file_list))
             shutil.rmtree(os.path.join("model-training", "train", name))
-    train_features = pdu.concat(
-        [
-            pdu.read_csv("model-training/train_features_header.csv.gz"),
-            pdu.read_csv("model-training/train_features_values.csv.gz"),
-        ],
-        axis=1,
+    train_features = pdu.read_csv(
+        "model-training/train_features.csv.gz",
+        header=None,
+        dtype={
+            "0": "str",
+            "1": "str",
+            **{str(i): "uint16" for i in range(2, num_features + 2)},
+        },
     )
-    train_output = pdu.concat(
-        [
-            pdu.read_csv("model-training/train_output_header.csv.gz"),
-            pdu.read_csv("model-training/train_output_values.csv.gz"),
-        ],
-        axis=1,
+    train_output = pdu.read_csv(
+        "model-training/train_output_header.csv.gz",
+        header=None,
+        dtype={
+            "0": "str",
+            "1": "str",
+            **{str(i): "uint16" for i in range(2, num_predictions + 2)},
+        },
     )
     train_features.columns = [
         "dataset",
@@ -240,22 +244,9 @@ def _concat_csvs(dt_list: List[Tuple[str, str]]) -> None:
                         base_path, dataset, subfolder, f"{timeseries}"
                     )
                 )
-                dtf.iloc[:, 0:2].to_csv(
+                dtf.to_csv(
                     os.path.join(
-                        "model-training", f"{folder}_{subfolder}_header.csv.gz"
-                    ),
-                    mode="a",
-                    header=False,
-                    index=False,
-                    compression={
-                        "method": "gzip",
-                        "compresslevel": 1,
-                        "mtime": 1,
-                    },
-                )
-                dtf.iloc[:, 2:].to_csv(
-                    os.path.join(
-                        "model-training", f"{folder}_{subfolder}_values.csv.gz"
+                        "model-training", f"{folder}_{subfolder}.csv.gz"
                     ),
                     mode="a",
                     header=False,

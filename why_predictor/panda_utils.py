@@ -1,5 +1,5 @@
 """Pandas utils"""
-from typing import Any, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd  # type: ignore
 
@@ -33,6 +33,9 @@ def read_csv(
     filename: str,
     usecols: Optional[Any] = None,
     header: Optional[Union[int, List[int], str]] = "infer",
+    dtype: Optional[Union[Dict[str, str], str]] = None,
 ) -> pd.DataFrame:
     """read_csv wrapper"""
-    return downcast(pd.read_csv(filename, usecols=usecols, header=header))
+    return downcast(
+        pd.read_csv(filename, usecols=usecols, header=header, dtype=dtype)
+    )
