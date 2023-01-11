@@ -91,7 +91,6 @@ def _load_csv(
     data["timestamp"] = pd.to_datetime(data["timestamp"])
     # Use watios instead of kwh
     data["kWh"] = data["kWh"] * 1000
-    data["kWh"] = data.kWh.apply(np.uint16)
     # Filter out values, we only want one value per hour
     data = (
         data.set_index("timestamp")
@@ -100,6 +99,11 @@ def _load_csv(
         .reset_index()
         .reindex(columns=data.columns)
     )
+    # Sanity check
+    if data["kWh"].max() > np.iinfo(np.uint16).max:
+        return "", ""
+    # convert 'kWh' to uint16
+    data["kWh"] = data.kWh.apply(np.uint16)
     # Timeseries name
     timeseries_name = os.path.splitext(timeseries)[0]
     if timeseries_name.endswith("csv"):
@@ -226,6 +230,10 @@ def _concat_csvs(dt_list: List[Tuple[str, str]]) -> None:
     for folder in ["train", "test"]:
         base_path = f"model-training/{folder}"
         for dataset, timeseries in dt_list:
+            # Sanity check
+            if dataset == "" or timeseries == "":
+                continue
+            # Process subfolder
             for subfolder in ["features", "output"]:
                 dtf = pdu.read_csv(
                     os.path.join(
