@@ -198,6 +198,7 @@ def load_files(
         with Pool() as pool:
             _concat_csvs(pool.starmap(_load_csv, file_list))
             shutil.rmtree(os.path.join("model-training", "train", name))
+    logger.debug("Reading train_features file...")
     train_features = pdu.read_csv(
         "model-training/train_features.csv.gz",
         header=None,
@@ -207,8 +208,9 @@ def load_files(
             **{str(i): "uint16" for i in range(2, num_features + 2)},
         },
     )
+    logger.debug("Reading train_output file...")
     train_output = pdu.read_csv(
-        "model-training/train_output_header.csv.gz",
+        "model-training/train_output.csv.gz",
         header=None,
         dtype={
             "0": "str",
@@ -233,6 +235,7 @@ def load_files(
 def _concat_csvs(dt_list: List[Tuple[str, str]]) -> None:
     for folder in ["train", "test"]:
         base_path = f"model-training/{folder}"
+        logger.debug("Generating %s dataset...", folder)
         for dataset, timeseries in dt_list:
             # Sanity check
             if dataset == "" or timeseries == "":
