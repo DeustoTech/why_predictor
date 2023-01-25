@@ -12,7 +12,7 @@ import pandas as pd  # type: ignore
 
 from .. import panda_utils as pdu
 from ..errors import ErrorType
-from ..load_sets import get_train_datasets
+from ..load_sets import delete_previous_datasets, get_train_datasets
 from ..models import BasicModel, Models
 from .models import (
     get_best_trained_model,
@@ -60,7 +60,8 @@ def final_fforma_prediction(
     _generate_fforma_final_output(
         models,
         pdu.read_csv(
-            "fforma-training/test/fforma/output/dataset.csv.gz"
+            # "fforma-training/test/fforma/output/dataset.csv.gz"
+            "fforma-training/test_output.csv.gz"
         ).set_index(["dataset", "timeseries"]),
         ErrorType[args.error_type_fforma],
     )
@@ -191,15 +192,17 @@ def get_datasets_and_dict_trained_models(
     train_features.timeseries = train_features.timeseries.astype("string")
     train_features.set_index(["dataset", "timeseries"], inplace=True)
     # Generate path
-    fforma_base_path = "fforma-training/test/fforma/"
+    fforma_base_path = "fforma-training"
     if not os.path.exists(fforma_base_path):
         os.makedirs(os.path.join(fforma_base_path, "features"))
         os.makedirs(os.path.join(fforma_base_path, "output"))
+    # Delete previous files if any
+    delete_previous_datasets(fforma_base_path)
     # Generate test features and save it to file
     train_features[
         train_features.index.isin(test_datasets)
     ].reset_index().to_csv(
-        os.path.join(fforma_base_path, "features", "dataset.csv.gz"),
+        os.path.join(fforma_base_path, "test_features.csv.gz"),
         index=False,
     )
     # Generate train features dataset
@@ -213,7 +216,7 @@ def get_datasets_and_dict_trained_models(
         models_dict,
         error,
         median_value,
-        fforma_base_path,
+        "test",
     )
     # For train dataset
     train_output = _generate_fforma_output_dataset(
@@ -222,6 +225,11 @@ def get_datasets_and_dict_trained_models(
         models_dict,
         error,
         median_value,
+        "train",
+    )
+    train_features.to_csv(
+        os.path.join(fforma_base_path, "train_features.csv.gz"),
+        index=False,
     )
     return (
         train_features,
@@ -273,7 +281,7 @@ def _generate_fforma_output_dataset(
     models_dict: Dict[str, BasicModel],
     error: ErrorType,
     median_value: float,
-    fforma_base_path: Optional[str] = None,
+    folder_name: Optional[str] = None,
 ) -> pd.DataFrame:
     dtfs = [pdu.DataFrame(datasets, columns=["dataset", "timeseries"])]
     for model in models_dict.values():
@@ -285,9 +293,9 @@ def _generate_fforma_output_dataset(
         model.clear_model()
         dtfs.append(pdu.DataFrame(values, columns=[model.short_name]))
     result = pdu.concat(dtfs, axis=1)
-    if fforma_base_path:
+    if folder_name is not None:
         result.to_csv(
-            os.path.join(fforma_base_path, "output", "dataset.csv.gz"),
+            os.path.join("fforma-training", f"{folder_name}_output.csv.gz"),
             index=False,
         )
     return result

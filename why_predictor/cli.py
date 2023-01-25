@@ -216,7 +216,7 @@ def main() -> None:
         select_hyperparameters(series, args)
     # Execute select_fforma if mode is:
     # generate-hypeparams, generate-fforma or full
-    if args.mode in ["generate-hyperparams", "generate-fforma", "full"]:
+    if args.mode in ["generate-fforma", "full"]:
         print()
         logger.info("* Generating FFORMA...")
         train_fforma(

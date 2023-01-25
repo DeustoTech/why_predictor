@@ -128,22 +128,26 @@ def _load_csv(
     ]
     dtf = dtf.iloc[:limit]  # train
     base_path = f"model-training/test/{dataset_name}/"
+    logger.debug("Saving %s to %s%s", timeseries, base_path, "features")
     test.iloc[:, : window[0] + 2].to_csv(
         os.path.join(base_path, "features", f"{timeseries}"),
         index=False,
         compression={"method": "gzip", "compresslevel": 1, "mtime": 1},
     )
+    logger.debug("Saving %s to %s%s", timeseries, base_path, "output")
     test.drop(test.iloc[:, 2 : window[0] + 2], axis=1).to_csv(
         os.path.join(base_path, "output", f"{timeseries}"),
         index=False,
         compression={"method": "gzip", "compresslevel": 1, "mtime": 1},
     )
     base_path = f"model-training/train/{dataset_name}/"
+    logger.debug("Saving %s to %s%s", timeseries, base_path, "features")
     dtf.iloc[:, : window[0] + 2].to_csv(
         os.path.join(base_path, "features", f"{timeseries}"),
         index=False,
         compression={"method": "gzip", "compresslevel": 1, "mtime": 1},
     )
+    logger.debug("Saving %s to %s%s", timeseries, base_path, "output")
     dtf.drop(dtf.iloc[:, 2 : window[0] + 2], axis=1).to_csv(
         os.path.join(base_path, "output", f"{timeseries}"),
         index=False,
@@ -175,7 +179,6 @@ def load_files(
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Load training set"""
     logger.info("Loading CSV files...")
-    total_window = num_features + num_predictions
     _remove_files()
     for idxset, name in enumerate(training_set):
         logger.debug(
@@ -196,49 +199,130 @@ def load_files(
             for i, v in enumerate(training_set[name])
         ]
         with Pool() as pool:
-            _concat_csvs(pool.starmap(_load_csv, file_list))
+            _concat_csvs(
+                pool.starmap(_load_csv, file_list),
+                num_features,
+                num_predictions,
+            )
             shutil.rmtree(os.path.join("model-training", "train", name))
-    logger.debug("Reading train_features file...")
-    train_features = pdu.read_csv(
-        "model-training/train_features.csv.gz",
-        header=None,
-        dtype={
-            "0": "str",
-            "1": "str",
-            **{str(i): "uint16" for i in range(2, num_features + 2)},
-        },
+            # shutil.rmtree(os.path.join("model-training", "test", name))
+    return load_train_datasets("model-training", num_features, num_predictions)
+
+
+def load_train_datasets(
+    base_path: str, num_features: int, num_predictions: int
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Load train datasets"""
+    total_window = num_features + num_predictions
+    feat_types = {
+        "dataset": "str",
+        "timeseries": "str",
+        **{f"col{i}": "uint16" for i in range(1, num_predictions + 1)},
+    }
+    out_types = {
+        "dataset": "str",
+        "timeseries": "str",
+        **{f"col{i}": "uint16" for i in range(1, total_window + 1)},
+    }
+    return _load_datasets(base_path, "train", feat_types, out_types)
+
+
+def load_test_datasets(
+    base_path: str, num_features: int, num_predictions: int
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Load train datasets"""
+    total_window = num_features + num_predictions
+    feat_types = {
+        "dataset": "str",
+        "timeseries": "str",
+        **{f"col{i}": "uint16" for i in range(1, num_predictions + 1)},
+    }
+    out_types = {
+        "dataset": "str",
+        "timeseries": "str",
+        **{f"col{i}": "uint16" for i in range(1, total_window + 1)},
+    }
+    return _load_datasets(base_path, "test", feat_types, out_types)
+
+
+def _load_datasets(
+    base_path: str,
+    train_test_type: str,
+    feat_types: Dict[str, str],
+    out_types: Dict[str, str],
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    logger.debug("Reading %s_features file...", train_test_type)
+    set_features = pdu.read_csv(
+        f"{base_path}/{train_test_type}_features.csv.gz",
+        # header=None,
+        dtype=feat_types,
     )
-    logger.debug("Reading train_output file...")
-    train_output = pdu.read_csv(
-        "model-training/train_output.csv.gz",
-        header=None,
-        dtype={
-            "0": "str",
-            "1": "str",
-            **{str(i): "uint16" for i in range(2, num_predictions + 2)},
-        },
+    logger.debug("Reading %s_output file...", train_test_type)
+    set_output = pdu.read_csv(
+        f"{base_path}/{train_test_type}_output.csv.gz",
+        # header=None,
+        dtype=out_types,
     )
-    train_features.columns = [
-        "dataset",
-        "timeseries",
-        *[f"col{i}" for i in range(1, num_features + 1)],
-    ]
-    train_output.columns = [
-        "dataset",
-        "timeseries",
-        *[f"col{i}" for i in range(num_features + 1, total_window + 1)],
-    ]
     logger.info("CSV files loaded.")
-    return (train_features, train_output)
+    return (set_features, set_output)
 
 
-def _concat_csvs(dt_list: List[Tuple[str, str]]) -> None:
+def delete_previous_datasets(base_path: str) -> None:
+    """delete datasets from previous executions"""
+    for test_train in ["test", "train"]:
+        for feat_output in ["features", "output"]:
+            process_file = os.path.join(
+                base_path, f"{test_train}_{feat_output}.csv.gz"
+            )
+            if os.path.exists(process_file):
+                logger.debug(
+                    "Removing previous execution or step file: %s",
+                    process_file,
+                )
+                os.remove(process_file)
+
+
+def _concat_csvs(
+    dt_list: List[Tuple[str, str]], num_features: int, num_predictions: int
+) -> None:
+    # Delete subfolder
+    delete_previous_datasets("model-training")
+    # Initialize datasets
+    if dt_list:
+        for test_train in ["test", "train"]:
+            for feat_output in ["features", "output"]:
+                if feat_output == "features":
+                    cols = [f"col{i}" for i in range(1, num_features + 1)]
+                else:
+                    cols = [
+                        f"col{i}"
+                        for i in range(
+                            num_features + 1,
+                            num_features + num_predictions + 1,
+                        )
+                    ]
+                logger.debug("Initializing %s dataset...", test_train)
+                pd.DataFrame(columns=["dataset", "timeseries", *cols]).to_csv(
+                    os.path.join(
+                        "model-training", f"{test_train}_{feat_output}.csv.gz"
+                    ),
+                    index=False,
+                    compression={
+                        "method": "gzip",
+                        "compresslevel": 1,
+                        "mtime": 1,
+                    },
+                )
     for folder in ["train", "test"]:
         base_path = f"model-training/{folder}"
+        # Generate datasets
         logger.debug("Generating %s dataset...", folder)
         for dataset, timeseries in dt_list:
             # Sanity check
             if dataset == "" or timeseries == "":
+                logger.warning(
+                    "Dataset is %s and timeseries is %s", dataset, timeseries
+                )
                 continue
             # Process subfolder
             for subfolder in ["features", "output"]:

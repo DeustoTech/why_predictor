@@ -49,6 +49,10 @@ class BasicModelGroup(ABC):
         self.datasets = self.__get_datasets(output)
         self.generate_hyperparams()
         self.median_value = np.nanmean(features.iloc[:, NUM_HEADERS:])
+        self.num_features_predictions = [
+            datasets[0].shape[1] - NUM_HEADERS,
+            datasets[1].shape[1] - NUM_HEADERS,
+        ]
         self.__generate_paths()
         self.__train_models(features, output)
 
@@ -91,13 +95,40 @@ class BasicModelGroup(ABC):
             return [("fforma", "dataset")]
         return [x[0] for x in output.groupby(["dataset", "timeseries"])]
 
-    def fit(self) -> None:
+    def fit(
+        self, test_features: pd.DataFrame, test_output: pd.DataFrame
+    ) -> None:
         """Generate predictions"""
         logger.debug("Calculating errors %s...", self.name)
         median_values: List[Tuple[float, BasicModel]] = []
         for model in self.hyper_params.values():
             median_error = (
                 model.calculate_errors(
+                    (test_features, test_output),
+                    self.error_type,
+                    self.median_value,
+                )
+                .stack()
+                .median()
+            )
+            logger.info(
+                "%s %s: %r", self.error_type.name, self.name, median_error
+            )
+            median_values.append((median_error, model))
+        median_values.sort(key=lambda x: x[0])
+        hyperparams_path = os.path.join(self.base_path, "hyperparameters")
+        filename = os.path.join(hyperparams_path, f"{self.name}.json")
+        with open(filename, "w", encoding="utf8") as f_hyper:
+            median_error, model = median_values[0]
+            f_hyper.write(f"{median_error}|{json.dumps(model.hyperparams)}")
+
+    def fit2(self) -> None:
+        """Generate predictions"""
+        logger.debug("Calculating errors %s...", self.name)
+        median_values: List[Tuple[float, BasicModel]] = []
+        for model in self.hyper_params.values():
+            median_error = (
+                model.calculate_errors2(
                     self.datasets, self.error_type, self.median_value
                 )
                 .stack()

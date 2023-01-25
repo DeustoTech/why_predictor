@@ -67,6 +67,43 @@ class BasicModel(ABC):
 
     def calculate_errors(
         self,
+        datasets: Tuple[pd.DataFrame, pd.DataFrame],
+        error: ErrorType,
+        median_value: float,
+    ) -> pd.DataFrame:
+        """Calculate Errors"""
+        logger.debug(
+            "Calculating errors for %s with params %s",
+            error.name,
+            self.paramsname,
+        )
+        error_filename = os.path.join(
+            self.base_path, "errors", f"{error.name}_{self.paramsname}.csv.gz"
+        )
+        test_features, test_output = datasets
+        predictions = self.make_predictions(test_features, test_output)
+        error_values = error.value(
+            test_output.iloc[:, NUM_HEADERS:],
+            predictions,
+            median_value,
+        )
+        error_values.to_csv(error_filename, index=False, header=False)
+        pd.concat(
+            [test_output[["dataset", "timeseries"]], error_values.sum(axis=1)],
+            ignore_index=True,
+            axis=1,
+        ).rename(
+            columns={0: "dataset", 1: "timeseries", 2: self.paramsname}
+        ).to_csv(
+            os.path.join(
+                self.base_path, "sum_errors", f"{self.paramsname}.csv.gz"
+            ),
+            index=False,
+        )
+        return error_values
+
+    def calculate_errors2(
+        self,
         datasets: List[Tuple[str, str]],
         error: ErrorType,
         median_value: float,

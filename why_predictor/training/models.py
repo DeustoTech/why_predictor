@@ -15,7 +15,7 @@ from scipy.stats import friedmanchisquare  # type: ignore
 
 from .. import panda_utils as pdu
 from ..errors import ErrorType
-from ..load_sets import get_train_datasets
+from ..load_sets import get_train_datasets, load_test_datasets
 from ..models import BasicModel, ModelGroups, Models
 
 logger = logging.getLogger("logger")
@@ -102,11 +102,16 @@ def train_to_fit_hyperparameters(
             error,
             base_path,
         )
+    num_features = train_features.shape[1] - 2
+    num_predictions = train_features.shape[1] - 2
     del train_features
     del train_output
     del datasets
+    test_features, test_output = load_test_datasets(
+        base_path, num_features, num_predictions
+    )
     for model in models_dict.values():
-        model.fit()
+        model.fit(test_features, test_output)
     hyperparams_list = [
         h for x in models_dict.values() for h in x.hyper_params.keys()
     ]
@@ -126,7 +131,7 @@ def friedman_test_with_post_hoc(
     # Generate dataset
     sum_errors: List[pd.DataFrame] = []
     for model in models:
-        filename = os.path.join(base_path, "sum_errors", f"{model}.csv")
+        filename = os.path.join(base_path, "sum_errors", f"{model}.csv.gz")
         sum_errors.append(
             pdu.read_csv(filename).set_index(["dataset", "timeseries"])
         )
