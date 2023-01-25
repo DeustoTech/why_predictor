@@ -180,6 +180,7 @@ def load_files(
     """Load training set"""
     logger.info("Loading CSV files...")
     _remove_files()
+    _initialize_datasets(num_features, num_predictions)
     for idxset, name in enumerate(training_set):
         logger.debug(
             "Dataset (%d/%d): %s", idxset + 1, len(training_set), name
@@ -199,11 +200,7 @@ def load_files(
             for i, v in enumerate(training_set[name])
         ]
         with Pool() as pool:
-            _concat_csvs(
-                pool.starmap(_load_csv, file_list),
-                num_features,
-                num_predictions,
-            )
+            _concat_csvs(pool.starmap(_load_csv, file_list))
             shutil.rmtree(os.path.join("model-training", "train", name))
             # shutil.rmtree(os.path.join("model-training", "test", name))
     return load_train_datasets("model-training", num_features, num_predictions)
@@ -282,37 +279,38 @@ def delete_previous_datasets(base_path: str) -> None:
                 os.remove(process_file)
 
 
-def _concat_csvs(
-    dt_list: List[Tuple[str, str]], num_features: int, num_predictions: int
-) -> None:
+def _initialize_datasets(num_features: int, num_predictions: int) -> None:
     # Delete subfolder
     delete_previous_datasets("model-training")
-    # Initialize datasets
-    if dt_list:
-        for test_train in ["test", "train"]:
-            for feat_output in ["features", "output"]:
-                if feat_output == "features":
-                    cols = [f"col{i}" for i in range(1, num_features + 1)]
-                else:
-                    cols = [
-                        f"col{i}"
-                        for i in range(
-                            num_features + 1,
-                            num_features + num_predictions + 1,
-                        )
-                    ]
-                logger.debug("Initializing %s dataset...", test_train)
-                pd.DataFrame(columns=["dataset", "timeseries", *cols]).to_csv(
-                    os.path.join(
-                        "model-training", f"{test_train}_{feat_output}.csv.gz"
-                    ),
-                    index=False,
-                    compression={
-                        "method": "gzip",
-                        "compresslevel": 1,
-                        "mtime": 1,
-                    },
-                )
+    if not os.path.exists("model-training"):
+        os.makedirs(os.path.join("model-training"))
+    for test_train in ["test", "train"]:
+        for feat_output in ["features", "output"]:
+            if feat_output == "features":
+                cols = [f"col{i}" for i in range(1, num_features + 1)]
+            else:
+                cols = [
+                    f"col{i}"
+                    for i in range(
+                        num_features + 1,
+                        num_features + num_predictions + 1,
+                    )
+                ]
+            logger.debug("Initializing %s dataset...", test_train)
+            pd.DataFrame(columns=["dataset", "timeseries", *cols]).to_csv(
+                os.path.join(
+                    "model-training", f"{test_train}_{feat_output}.csv.gz"
+                ),
+                index=False,
+                compression={
+                    "method": "gzip",
+                    "compresslevel": 1,
+                    "mtime": 1,
+                },
+            )
+
+
+def _concat_csvs(dt_list: List[Tuple[str, str]]) -> None:
     for folder in ["train", "test"]:
         base_path = f"model-training/{folder}"
         # Generate datasets
