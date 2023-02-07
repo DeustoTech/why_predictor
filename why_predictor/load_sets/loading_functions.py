@@ -15,6 +15,7 @@ import pandas as pd  # type: ignore
 from .. import panda_utils as pdu
 
 logger = logging.getLogger("logger")
+POWER_EXC = "max kWh exceeded"
 
 
 def get_datasets(basepath: str, dirname: str) -> List[str]:
@@ -101,7 +102,7 @@ def _load_csv(
     )
     # Sanity check
     if data["kWh"].max() > np.iinfo(np.uint16).max:
-        return "", ""
+        return POWER_EXC, POWER_EXC
     # convert 'kWh' to uint16
     data["kWh"] = data.kWh.apply(np.uint16)
     # Timeseries name
@@ -317,7 +318,7 @@ def _concat_csvs(dt_list: List[Tuple[str, str]]) -> None:
         logger.debug("Generating %s dataset...", folder)
         for dataset, timeseries in dt_list:
             # Sanity check
-            if dataset == "" or timeseries == "":
+            if POWER_EXC in (dataset, timeseries):
                 logger.warning(
                     "Dataset is %s and timeseries is %s", dataset, timeseries
                 )
