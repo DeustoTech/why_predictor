@@ -71,6 +71,70 @@ def _generate_rolling_windows(
     return pdu.DataFrame(matrix)
 
 
+def _load_csv_aritz(
+    counter: Tuple[int, int],
+    names: Tuple[str, str],
+    window: Tuple[int, int],
+    dataset_path: Optional[str] = None,
+) -> Tuple[str, str]:
+    """Load and process timeseries CSV File"""
+    dataset_name, filename = names
+    timeseries = os.path.split(filename)[-1]
+    logger.debug(
+        "(%d/%d) loading: %s",
+        counter[0],
+        counter[1],
+        filename,
+    )
+    data = pdu.read_csv(filename, usecols=["timestamp", "kWh"])
+    # Set column as 'timestamp' (Pandas get it as str)
+    data["timestamp"] = pd.to_datetime(data["timestamp"])
+    # Use watios instead of kwh
+    data["kWh"] = data["kWh"] * 1000
+    # Filter out values, we only want one value per hour
+    data = (
+        data.set_index("timestamp")
+        .resample("60T")
+        .sum()
+        .reset_index()
+        .reindex(columns=data.columns)
+    )
+    # Sanity check
+    if data["kWh"].max() > np.iinfo(np.uint16).max:
+        return POWER_EXC, POWER_EXC
+    # convert 'kWh' to uint16
+    data["kWh"] = data.kWh.apply(np.uint16)
+    # Timeseries name
+    timeseries_name = os.path.splitext(timeseries)[0]
+    if timeseries_name.endswith("csv"):
+        timeseries_name = os.path.splitext(timeseries_name)[0]
+    # Generate rolling window values
+    dtf = _generate_rolling_windows(
+        data, dataset_name, timeseries_name, sum(window)
+    )
+    if dataset_path:
+        dtf.to_csv(
+            os.path.join(dataset_path, f"{os.path.split(filename)[1]}.gz"),
+            index=False,
+            compression={"method": "gzip", "compresslevel": 1, "mtime": 1},
+        )
+    # Split dataframes
+    base_path = f"model-training/train/{dataset_name}/"
+    logger.debug("Saving %s to %s%s", timeseries, base_path, "features")
+    dtf.iloc[:, : window[0] + 2].to_csv(
+        os.path.join(base_path, "features", f"{timeseries}"),
+        index=False,
+        compression={"method": "gzip", "compresslevel": 1, "mtime": 1},
+    )
+    logger.debug("Saving %s to %s%s", timeseries, base_path, "output")
+    dtf.drop(dtf.iloc[:, 2 : window[0] + 2], axis=1).to_csv(
+        os.path.join(base_path, "output", f"{timeseries}"),
+        index=False,
+        compression={"method": "gzip", "compresslevel": 1, "mtime": 1},
+    )
+    return dataset_name, timeseries
+
+
 def _load_csv(
     counter: Tuple[int, int],
     names: Tuple[str, str],
@@ -183,6 +247,9 @@ def load_files(
     _remove_files()
     _initialize_datasets(num_features, num_predictions)
     for idxset, name in enumerate(training_set):
+        # Sanity check
+        if name == "goi4_pst":
+            continue
         logger.debug(
             "Dataset (%d/%d): %s", idxset + 1, len(training_set), name
         )
@@ -204,6 +271,24 @@ def load_files(
             _concat_csvs(pool.starmap(_load_csv, file_list))
             shutil.rmtree(os.path.join("model-training", "train", name))
             # shutil.rmtree(os.path.join("model-training", "test", name))
+    # Aritz files
+    training_set["aritz"] = glob.glob("aritz/*.csv.gz")
+    aritz_file_list = [
+        (
+            (i + 1, len(training_set["aritz"])),
+            ("aritz", v),
+            (num_features, num_predictions),
+        )
+        for i, v in enumerate(training_set["aritz"])
+    ]
+    for folder in ["train", "test"]:
+        base_path = f"model-training/{folder}/aritz"
+        if not os.path.exists(base_path):
+            os.makedirs(os.path.join(base_path, "features"))
+            os.makedirs(os.path.join(base_path, "output"))
+    with Pool() as pool:
+        _concat_csvs_aritz(pool.starmap(_load_csv_aritz, aritz_file_list))
+        shutil.rmtree(os.path.join("model-training", "train", "aritz"))
     return load_train_datasets("model-training", num_features, num_predictions)
 
 
@@ -302,6 +387,36 @@ def _initialize_datasets(num_features: int, num_predictions: int) -> None:
                 os.path.join(
                     "model-training", f"{test_train}_{feat_output}.csv.gz"
                 ),
+                index=False,
+                compression={
+                    "method": "gzip",
+                    "compresslevel": 1,
+                    "mtime": 1,
+                },
+            )
+
+
+def _concat_csvs_aritz(dt_list: List[Tuple[str, str]]) -> None:
+    folder = "train"
+    base_path = f"model-training/{folder}"
+    # Generate datasets
+    logger.debug("Generating %s dataset...", folder)
+    for dataset, timeseries in dt_list:
+        # Sanity check
+        if POWER_EXC in (dataset, timeseries):
+            logger.warning(
+                "Dataset is %s and timeseries is %s", dataset, timeseries
+            )
+            continue
+        # Process subfolder
+        for subfolder in ["features", "output"]:
+            dtf = pdu.read_csv(
+                os.path.join(base_path, dataset, subfolder, f"{timeseries}")
+            )
+            dtf.to_csv(
+                os.path.join("model-training", f"{folder}_{subfolder}.csv.gz"),
+                mode="a",
+                header=False,
                 index=False,
                 compression={
                     "method": "gzip",
