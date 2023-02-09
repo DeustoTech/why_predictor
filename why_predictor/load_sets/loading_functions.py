@@ -248,7 +248,7 @@ def load_files(
     _initialize_datasets(num_features, num_predictions)
     for idxset, name in enumerate(training_set):
         # Sanity check
-        if name == "goi4_pst":
+        if name.startswith("goi4"):
             continue
         logger.debug(
             "Dataset (%d/%d): %s", idxset + 1, len(training_set), name
@@ -272,6 +272,8 @@ def load_files(
             shutil.rmtree(os.path.join("model-training", "train", name))
             # shutil.rmtree(os.path.join("model-training", "test", name))
     # Aritz files
+    for subtype in ["features", "output"]:
+        os.remove(f"model-training/train_{subtype}.csv.gz")
     training_set["aritz"] = glob.glob("aritz/*.csv.gz")
     aritz_file_list = [
         (
