@@ -274,6 +274,25 @@ def load_files(
     # Aritz files
     for subtype in ["features", "output"]:
         os.remove(f"model-training/train_{subtype}.csv.gz")
+        if subtype == "features":
+            cols = [f"col{i}" for i in range(1, num_features + 1)]
+        else:
+            cols = [
+                f"col{i}"
+                for i in range(
+                    num_features + 1,
+                    num_features + num_predictions + 1,
+                )
+            ]
+        pd.DataFrame(columns=["dataset", "timeseries", *cols]).to_csv(
+            f"model-training/train_{subtype}.csv.gz",
+            index=False,
+            compression={
+                "method": "gzip",
+                "compresslevel": 1,
+                "mtime": 1,
+            },
+        )
     training_set["aritz"] = glob.glob("aritz/*.csv.gz")
     aritz_file_list = [
         (
@@ -325,7 +344,10 @@ def load_test_datasets(
     out_types = {
         "dataset": "str",
         "timeseries": "str",
-        **{f"col{i}": "uint16" for i in range(1, total_window + 1)},
+        **{
+            f"col{i}": "uint16"
+            for i in range(num_predictions + 1, total_window + 1)
+        },
     }
     return _load_datasets(base_path, "test", feat_types, out_types)
 
