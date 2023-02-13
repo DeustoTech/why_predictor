@@ -202,7 +202,7 @@ class RandomForestRegressionModelGroup(BasicModelGroup):
 
     params: RFHyperParams = {
         "n_estimators": [100, 150, 200],
-        "max_depth": [None, 10, 15],
+        "max_depth": [10, 15],
         # "criterion": [
         #     "squared_error",
         #     "friedman_mse",
