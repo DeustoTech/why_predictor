@@ -1,4 +1,4 @@
-# why_predictor
+# WHY FFORMA predictor
 
 [![Linter][linter-image]][linter-url]
 
