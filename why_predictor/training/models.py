@@ -103,7 +103,7 @@ def train_to_fit_hyperparameters(
             base_path,
         )
     num_features = train_features.shape[1] - 2
-    num_predictions = train_features.shape[1] - 2
+    num_predictions = train_output.shape[1] - 2
     del train_features
     del train_output
     del datasets
@@ -132,9 +132,12 @@ def friedman_test_with_post_hoc(
     sum_errors: List[pd.DataFrame] = []
     for model in models:
         filename = os.path.join(base_path, "sum_errors", f"{model}.csv.gz")
-        sum_errors.append(
-            pdu.read_csv(filename).set_index(["dataset", "timeseries"])
-        )
+        try:
+            sum_errors.append(
+                pdu.read_csv(filename).set_index(["dataset", "timeseries"])
+            )
+        except FileNotFoundError:
+            logger.warning("Error file does not exist for model %s", model)
     friedman_df = pd.concat(sum_errors, axis=1)
     columns = friedman_df.columns
     # Calculate friedman chi-square

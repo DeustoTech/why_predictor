@@ -3,7 +3,6 @@ import logging
 import math
 import os
 import random
-import shutil
 from argparse import Namespace
 from typing import Dict, List, Optional, Tuple
 
@@ -12,7 +11,7 @@ import pandas as pd  # type: ignore
 
 from .. import panda_utils as pdu
 from ..errors import ErrorType
-from ..load_sets import delete_previous_datasets, get_train_datasets
+from ..load_sets import delete_previous_datasets
 from ..models import BasicModel, Models
 from .models import (
     get_best_trained_model,
@@ -24,26 +23,22 @@ logger = logging.getLogger("logger")
 
 
 def final_fforma_prediction(
-    series: Dict[str, List[str]],
-    training_percentage_fforma: float,
+    _series: Dict[str, List[str]],
+    _: float,
     train_test_ratio_fforma: float,
     args: Namespace,
 ) -> None:
     """final FFORMA prediction"""
-    # Get FFORMA datasets
+    test_features = pdu.read_csv("model-training/test_features.csv.gz")
+    test_output = pdu.read_csv("model-training/test_output.csv.gz")
+    # Calculate models
     (
         train_features,
         train_output,
         models,
     ) = get_datasets_and_dict_trained_models(
         args.models_training,
-        get_train_datasets(
-            series,
-            training_percentage_fforma,
-            args.num_features,
-            args.num_predictions,
-            train_test_ratio_fforma,
-        ),
+        (test_features, test_output),
         ErrorType[args.error_type_fforma],
         train_test_ratio_fforma,
         "model-training",
@@ -76,6 +71,7 @@ def _generate_fforma_final_output(
     if os.path.exists(error_filename):
         os.remove(error_filename)
     logger.debug("Fforma test_output:\n%r", fforma_test_output)
+    fforma_test_output["sum"] = fforma_test_output.sum(axis=1)
     for dataset in fforma_test_output.index:
         test_features = pdu.read_csv(
             f"model-training/test/{dataset[0]}/features/{dataset[1]}.csv.gz"
@@ -92,7 +88,6 @@ def _generate_fforma_final_output(
             else:
                 final_output = value
             model.clear_model()
-        fforma_test_output["sum"] = fforma_test_output.sum(axis=1)
         final_output = final_output / fforma_test_output["sum"][dataset]
         logger.debug("Final output\n%r", final_output)
         error.value(
@@ -108,28 +103,21 @@ def _generate_fforma_final_output(
 
 
 def train_fforma(
-    series: Dict[str, List[str]],
+    _: Dict[str, List[str]],  # series
     training_percentage_fforma: float,
     train_test_ratio_fforma: float,
     args: Namespace,
 ) -> None:
     """Train FFORMA"""
     fforma_path = "fforma-training"
-    # Clean training directory
-    for check_path in [
-        os.path.join(fforma_path, "errors"),
-        os.path.join(fforma_path, "post-hoc"),
-        os.path.join(fforma_path, "test"),
-    ]:
-        if os.path.exists(check_path):
-            shutil.rmtree(check_path)
-    if os.path.exists("model-training/test"):
-        shutil.rmtree("model-training/test")
     # Train models
     train_to_fit_hyperparameters(
         args.models_fforma,
         get_fforma_train_test_datasets(
-            series, training_percentage_fforma, train_test_ratio_fforma, args
+            # series,
+            training_percentage_fforma,
+            train_test_ratio_fforma,
+            args,
         ),
         ErrorType[args.error_type_models],
         fforma_path,
@@ -137,22 +125,17 @@ def train_fforma(
 
 
 def get_fforma_train_test_datasets(
-    series: Dict[str, List[str]],
-    training_percentage_fforma: float,
+    _: float,  # training_percentage_fforma
     train_test_ratio_fforma: float,
     args: Namespace,
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Get train and test fforma datasets"""
+    test_features = pdu.read_csv("model-training/test_features.csv.gz")
+    test_output = pdu.read_csv("model-training/test_output.csv.gz")
     # Calculate models
-    train_features, train_output, _ = get_datasets_and_dict_trained_models(
+    train_features, train_output, _dict = get_datasets_and_dict_trained_models(
         args.models_training,
-        get_train_datasets(
-            series,
-            training_percentage_fforma,
-            args.num_features,
-            args.num_predictions,
-            train_test_ratio_fforma,
-        ),
+        (test_features, test_output),
         ErrorType[args.error_type_fforma],
         train_test_ratio_fforma,
         "model-training",
@@ -171,9 +154,7 @@ def get_datasets_and_dict_trained_models(
     train_features, train_output = datasets
     median_value = np.nanmean(train_features.iloc[:, 2:])
     # Generating models with best hyperparamer set
-    models_dict = _get_best_models_dict(
-        models, train_features, train_output, models_base_path
-    )
+    models_dict = _get_best_models_dict(models, models_base_path)
     # group by 'dataset' and get timeseries list
     dataset_grouped_list = [
         (x, [t[0] for t in v.groupby(["dataset", "timeseries"])])
@@ -240,21 +221,16 @@ def get_datasets_and_dict_trained_models(
 
 def _get_best_models_dict(
     models: List[str],
-    train_features: pd.DataFrame,
-    train_output: pd.DataFrame,
     models_base_path: str,
 ) -> Dict[str, BasicModel]:
-    logger.debug("Generating best hyperparameter-set models...")
+    logger.debug("Loading best hyperparameter-set models...")
     models_dict: Dict[str, BasicModel] = {}
     for model_name in models:
         filename = f"{models_base_path}/hyperparameters/{model_name}.json"
         _, hyperparameters = load_error_and_hyperparameters(filename)
         model = Models[model_name].value(hyperparameters, models_base_path)
-        model.generate_model(train_features, train_output)
-        model.save_model()
-        model.clear_model()
         models_dict[model_name] = model
-    logger.debug("Best hyperparameter-set models generated.")
+    logger.debug("Best hyperparameter-set models loaded.")
     return models_dict
 
 

@@ -102,18 +102,22 @@ class BasicModelGroup(ABC):
         logger.debug("Calculating errors %s...", self.name)
         median_values: List[Tuple[float, BasicModel]] = []
         for model in self.hyper_params.values():
-            median_error = (
-                model.calculate_errors(
-                    (test_features, test_output),
-                    self.error_type,
-                    self.median_value,
+            try:
+                median_error = (
+                    model.calculate_errors(
+                        (test_features, test_output),
+                        self.error_type,
+                        self.median_value,
+                    )
+                    .stack()
+                    .median()
                 )
-                .stack()
-                .median()
-            )
-            logger.info(
-                "%s %s: %r", self.error_type.name, self.name, median_error
-            )
+                logger.info(
+                    "%s %s: %r", self.error_type.name, self.name, median_error
+                )
+            except ValueError as err:
+                logger.warning("Error calculating %s: %s", model.name, err)
+                median_error = 1.0
             median_values.append((median_error, model))
         median_values.sort(key=lambda x: x[0])
         hyperparams_path = os.path.join(self.base_path, "hyperparameters")

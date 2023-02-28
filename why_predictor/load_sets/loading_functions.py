@@ -7,7 +7,7 @@ import os
 import random
 import shutil
 from multiprocessing import Pool
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 import numpy as np
 import pandas as pd  # type: ignore
@@ -75,7 +75,8 @@ def _load_csv_aritz(
     counter: Tuple[int, int],
     names: Tuple[str, str],
     window: Tuple[int, int],
-    dataset_path: Optional[str] = None,
+    root_path: str,
+    # dataset_path: Optional[str] = None,
 ) -> Tuple[str, str]:
     """Load and process timeseries CSV File"""
     dataset_name, filename = names
@@ -112,14 +113,14 @@ def _load_csv_aritz(
     dtf = _generate_rolling_windows(
         data, dataset_name, timeseries_name, sum(window)
     )
-    if dataset_path:
-        dtf.to_csv(
-            os.path.join(dataset_path, f"{os.path.split(filename)[1]}.gz"),
-            index=False,
-            compression={"method": "gzip", "compresslevel": 1, "mtime": 1},
-        )
+    # if dataset_path:
+    #    dtf.to_csv(
+    #        os.path.join(dataset_path, f"{os.path.split(filename)[1]}.gz"),
+    #        index=False,
+    #        compression={"method": "gzip", "compresslevel": 1, "mtime": 1},
+    #    )
     # Split dataframes
-    base_path = f"model-training/train/{dataset_name}/"
+    base_path = f"{root_path}/train/{dataset_name}/"
     logger.debug("Saving %s to %s%s", timeseries, base_path, "features")
     dtf.iloc[:, : window[0] + 2].to_csv(
         os.path.join(base_path, "features", f"{timeseries}"),
@@ -140,7 +141,8 @@ def _load_csv(
     names: Tuple[str, str],
     window: Tuple[int, int],
     train_test_ratio: float,
-    dataset_path: Optional[str] = None,
+    root_path: str,
+    # dataset_path: Optional[str] = None,
 ) -> Tuple[str, str]:
     """Load and process timeseries CSV File"""
     dataset_name, filename = names
@@ -177,12 +179,12 @@ def _load_csv(
     dtf = _generate_rolling_windows(
         data, dataset_name, timeseries_name, sum(window)
     )
-    if dataset_path:
-        dtf.to_csv(
-            os.path.join(dataset_path, f"{os.path.split(filename)[1]}.gz"),
-            index=False,
-            compression={"method": "gzip", "compresslevel": 1, "mtime": 1},
-        )
+    # if dataset_path:
+    #     dtf.to_csv(
+    #         os.path.join(dataset_path, f"{os.path.split(filename)[1]}.gz"),
+    #         index=False,
+    #         compression={"method": "gzip", "compresslevel": 1, "mtime": 1},
+    #     )
     # Split dataframes
     limit = math.ceil(len(dtf) * train_test_ratio)
     test = dtf.iloc[limit:]
@@ -192,7 +194,7 @@ def _load_csv(
         *[f"col{i}" for i in range(1, sum(window) + 1)],
     ]
     dtf = dtf.iloc[:limit]  # train
-    base_path = f"model-training/test/{dataset_name}/"
+    base_path = f"{root_path}/test/{dataset_name}/"
     logger.debug("Saving %s to %s%s", timeseries, base_path, "features")
     test.iloc[:, : window[0] + 2].to_csv(
         os.path.join(base_path, "features", f"{timeseries}"),
@@ -205,7 +207,7 @@ def _load_csv(
         index=False,
         compression={"method": "gzip", "compresslevel": 1, "mtime": 1},
     )
-    base_path = f"model-training/train/{dataset_name}/"
+    base_path = f"{root_path}/train/{dataset_name}/"
     logger.debug("Saving %s to %s%s", timeseries, base_path, "features")
     dtf.iloc[:, : window[0] + 2].to_csv(
         os.path.join(base_path, "features", f"{timeseries}"),
@@ -221,8 +223,7 @@ def _load_csv(
     return dataset_name, timeseries
 
 
-def _remove_files() -> None:
-    base_path = "model-training"
+def _remove_files(base_path: str) -> None:
     for test_train in ["test", "train"]:
         for feat_output in ["features", "output"]:
             for header_values in ["header", "values"]:
@@ -241,20 +242,20 @@ def load_files(
     num_features: int,
     num_predictions: int,
     train_test_ratio: float,
+    root_path: str = "model-training",
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Load training set"""
     logger.info("Loading CSV files...")
-    _remove_files()
-    _initialize_datasets(num_features, num_predictions)
+    _remove_files(root_path)
+    _initialize_datasets(num_features, num_predictions, root_path)
+    training_set["aritz"] = glob.glob("aritz/*.csv.gz")
+    aritz_files = [os.path.basename(x) for x in training_set["aritz"]]
     for idxset, name in enumerate(training_set):
-        # Sanity check
-        if name.startswith("goi4"):
-            continue
         logger.debug(
             "Dataset (%d/%d): %s", idxset + 1, len(training_set), name
         )
         for folder in ["train", "test"]:
-            base_path = f"model-training/{folder}/{name}"
+            base_path = f"{root_path}/{folder}/{name}"
             if not os.path.exists(base_path):
                 os.makedirs(os.path.join(base_path, "features"))
                 os.makedirs(os.path.join(base_path, "output"))
@@ -264,16 +265,19 @@ def load_files(
                 (name, v),
                 (num_features, num_predictions),
                 train_test_ratio,
+                root_path,
             )
             for i, v in enumerate(training_set[name])
+            # Sanity check (do not use aritz files)
+            if os.path.basename(v) not in aritz_files
         ]
         with Pool() as pool:
-            _concat_csvs(pool.starmap(_load_csv, file_list))
-            shutil.rmtree(os.path.join("model-training", "train", name))
-            # shutil.rmtree(os.path.join("model-training", "test", name))
+            _concat_csvs(pool.starmap(_load_csv, file_list), root_path)
+            shutil.rmtree(os.path.join(root_path, "train", name))
+            # shutil.rmtree(os.path.join(root_path, "test", name))
     # Aritz files
     for subtype in ["features", "output"]:
-        os.remove(f"model-training/train_{subtype}.csv.gz")
+        os.remove(f"{root_path}/train_{subtype}.csv.gz")
         if subtype == "features":
             cols = [f"col{i}" for i in range(1, num_features + 1)]
         else:
@@ -285,7 +289,7 @@ def load_files(
                 )
             ]
         pd.DataFrame(columns=["dataset", "timeseries", *cols]).to_csv(
-            f"model-training/train_{subtype}.csv.gz",
+            f"{root_path}/train_{subtype}.csv.gz",
             index=False,
             compression={
                 "method": "gzip",
@@ -293,24 +297,26 @@ def load_files(
                 "mtime": 1,
             },
         )
-    training_set["aritz"] = glob.glob("aritz/*.csv.gz")
     aritz_file_list = [
         (
             (i + 1, len(training_set["aritz"])),
             ("aritz", v),
             (num_features, num_predictions),
+            root_path,
         )
         for i, v in enumerate(training_set["aritz"])
     ]
     for folder in ["train", "test"]:
-        base_path = f"model-training/{folder}/aritz"
+        base_path = f"{root_path}/{folder}/aritz"
         if not os.path.exists(base_path):
             os.makedirs(os.path.join(base_path, "features"))
             os.makedirs(os.path.join(base_path, "output"))
     with Pool() as pool:
-        _concat_csvs_aritz(pool.starmap(_load_csv_aritz, aritz_file_list))
-        shutil.rmtree(os.path.join("model-training", "train", "aritz"))
-    return load_train_datasets("model-training", num_features, num_predictions)
+        _concat_csvs_aritz(
+            pool.starmap(_load_csv_aritz, aritz_file_list), root_path
+        )
+        shutil.rmtree(os.path.join(root_path, "train", "aritz"))
+    return load_train_datasets(root_path, num_features, num_predictions)
 
 
 def load_train_datasets(
@@ -389,11 +395,15 @@ def delete_previous_datasets(base_path: str) -> None:
                 os.remove(process_file)
 
 
-def _initialize_datasets(num_features: int, num_predictions: int) -> None:
+def _initialize_datasets(
+    num_features: int,
+    num_predictions: int,
+    root_path: str,
+) -> None:
     # Delete subfolder
-    delete_previous_datasets("model-training")
-    if not os.path.exists("model-training"):
-        os.makedirs(os.path.join("model-training"))
+    delete_previous_datasets(root_path)
+    if not os.path.exists(root_path):
+        os.makedirs(os.path.join(root_path))
     for test_train in ["test", "train"]:
         for feat_output in ["features", "output"]:
             if feat_output == "features":
@@ -408,9 +418,7 @@ def _initialize_datasets(num_features: int, num_predictions: int) -> None:
                 ]
             logger.debug("Initializing %s dataset...", test_train)
             pd.DataFrame(columns=["dataset", "timeseries", *cols]).to_csv(
-                os.path.join(
-                    "model-training", f"{test_train}_{feat_output}.csv.gz"
-                ),
+                os.path.join(root_path, f"{test_train}_{feat_output}.csv.gz"),
                 index=False,
                 compression={
                     "method": "gzip",
@@ -420,9 +428,9 @@ def _initialize_datasets(num_features: int, num_predictions: int) -> None:
             )
 
 
-def _concat_csvs_aritz(dt_list: List[Tuple[str, str]]) -> None:
+def _concat_csvs_aritz(dt_list: List[Tuple[str, str]], root_path: str) -> None:
     folder = "train"
-    base_path = f"model-training/{folder}"
+    base_path = f"{root_path}/{folder}"
     # Generate datasets
     logger.debug("Generating %s dataset...", folder)
     for dataset, timeseries in dt_list:
@@ -438,7 +446,7 @@ def _concat_csvs_aritz(dt_list: List[Tuple[str, str]]) -> None:
                 os.path.join(base_path, dataset, subfolder, f"{timeseries}")
             )
             dtf.to_csv(
-                os.path.join("model-training", f"{folder}_{subfolder}.csv.gz"),
+                os.path.join(root_path, f"{folder}_{subfolder}.csv.gz"),
                 mode="a",
                 header=False,
                 index=False,
@@ -450,9 +458,9 @@ def _concat_csvs_aritz(dt_list: List[Tuple[str, str]]) -> None:
             )
 
 
-def _concat_csvs(dt_list: List[Tuple[str, str]]) -> None:
+def _concat_csvs(dt_list: List[Tuple[str, str]], root_path: str) -> None:
     for folder in ["train", "test"]:
-        base_path = f"model-training/{folder}"
+        base_path = f"{root_path}/{folder}"
         # Generate datasets
         logger.debug("Generating %s dataset...", folder)
         for dataset, timeseries in dt_list:
@@ -470,9 +478,7 @@ def _concat_csvs(dt_list: List[Tuple[str, str]]) -> None:
                     )
                 )
                 dtf.to_csv(
-                    os.path.join(
-                        "model-training", f"{folder}_{subfolder}.csv.gz"
-                    ),
+                    os.path.join(root_path, f"{folder}_{subfolder}.csv.gz"),
                     mode="a",
                     header=False,
                     index=False,
