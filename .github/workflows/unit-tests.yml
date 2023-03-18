@@ -1,0 +1,17 @@
+name: Execute unit tests
+on: push
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    name: Checks
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+    - run: pip install --upgrade pip
+    - run: pip install -r requirements.txt
+
+    - name: Unit tests
+      run: nose2
