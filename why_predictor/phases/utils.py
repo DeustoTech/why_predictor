@@ -18,9 +18,7 @@ def copy_models(origin_path: str, new_path: str) -> None:
             model_path
         )
         model_filename = f"{name}_{json.dumps(hyperparams)}"
-        original_path = os.path.join(
-            origin_path, "models", model_filename
-        )
+        original_path = os.path.join(origin_path, "models", model_filename)
         # Copy model
         shutil.copy(original_path, new_models_path)
         # Copy hyperparameters file
