@@ -23,12 +23,16 @@ class ShiftedStochasticGradientDescentRegressor(ShiftedModel):
         self, features: pd.DataFrame, output: pd.DataFrame
     ) -> None:
         """Generate model"""
+        logger.debug(
+            "Training %s model (%s)...", self.short_name, self.hyperparams
+        )
         # We train with only the column for the first hour
         shifted_sgd_model = SGDRegressor(**self.hyperparams)
         self._model = shifted_sgd_model.fit(
             features.drop(["dataset", "timeseries"], axis=1),
             output.iloc[:, NUM_HEADERS],
         )
+        logger.debug("%s model trained.", self.short_name)
 
 
 class ChainedStochasticGradientDescentRegressor(MultioutputModel):
@@ -41,12 +45,16 @@ class ChainedStochasticGradientDescentRegressor(MultioutputModel):
         self, features: pd.DataFrame, output: pd.DataFrame
     ) -> None:
         """Generate model"""
+        logger.debug(
+            "Training %s model (%s)...", self.short_name, self.hyperparams
+        )
         # We train with only the column for the first hour
         chained_sgd_model = RegressorChain(SGDRegressor(**self.hyperparams))
         self._model = chained_sgd_model.fit(
             features.drop(["dataset", "timeseries"], axis=1),
             output.drop(["dataset", "timeseries"], axis=1),
         )
+        logger.debug("%s model trained.", self.short_name)
 
 
 class MultioutputSGDRegressor(MultioutputModel):
@@ -59,6 +67,9 @@ class MultioutputSGDRegressor(MultioutputModel):
         self, features: pd.DataFrame, output: pd.DataFrame
     ) -> None:
         """Generate model"""
+        logger.debug(
+            "Training %s model (%s)...", self.short_name, self.hyperparams
+        )
         multi_sgd_model = MultiOutputRegressor(
             SGDRegressor(**self.hyperparams)
         )
@@ -66,3 +77,4 @@ class MultioutputSGDRegressor(MultioutputModel):
             features.drop(["dataset", "timeseries"], axis=1),
             output.drop(["dataset", "timeseries"], axis=1),
         )
+        logger.debug("%s model trained.", self.short_name)

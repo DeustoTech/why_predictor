@@ -53,19 +53,8 @@ class BasicModelGroup(ABC):
             datasets[0].shape[1] - NUM_HEADERS,
             datasets[1].shape[1] - NUM_HEADERS,
         ]
-        self.__generate_paths()
+        # self.__generate_paths()
         self.__train_models(features, output)
-
-    def __generate_paths(self) -> None:
-        for check_path in [
-            os.path.join(self.base_path, "models"),
-            os.path.join(self.base_path, "hyperparameters"),
-            os.path.join(self.base_path, "errors"),
-            os.path.join(self.base_path, "sum_errors"),
-            os.path.join(self.base_path, "post-hoc"),
-        ]:
-            if not os.path.exists(check_path):
-                os.makedirs(check_path)
 
     @abstractmethod
     def generate_hyperparams(self) -> None:
@@ -98,9 +87,11 @@ class BasicModelGroup(ABC):
     def fit(
         self, test_features: pd.DataFrame, test_output: pd.DataFrame
     ) -> None:
-        """Generate predictions"""
+        """Fit hyperparameters from dataframes passed as parameter"""
         logger.debug("Calculating errors %s...", self.name)
+        # Initialize median values list (median error per model)
         median_values: List[Tuple[float, BasicModel]] = []
+        # For each model, calculate the median error
         for model in self.hyper_params.values():
             median_error = (
                 model.calculate_errors(
@@ -115,20 +106,22 @@ class BasicModelGroup(ABC):
                 "%s %s: %r", self.error_type.name, self.name, median_error
             )
             median_values.append((median_error, model))
+        # Sort the list by the median error (selected the one with lower error)
         median_values.sort(key=lambda x: x[0])
+        # Save Values to file -> hyperparameters/group_name.json
         hyperparams_path = os.path.join(self.base_path, "hyperparameters")
         filename = os.path.join(hyperparams_path, f"{self.name}.json")
         with open(filename, "w", encoding="utf8") as f_hyper:
             median_error, model = median_values[0]
             f_hyper.write(f"{median_error}|{json.dumps(model.hyperparams)}")
 
-    def fit2(self) -> None:
-        """Generate predictions"""
+    def fit_from_files(self) -> None:
+        """Fit hyperparameters from files"""
         logger.debug("Calculating errors %s...", self.name)
         median_values: List[Tuple[float, BasicModel]] = []
         for model in self.hyper_params.values():
             median_error = (
-                model.calculate_errors2(
+                model.calculate_errors_per_file(
                     self.datasets, self.error_type, self.median_value
                 )
                 .stack()

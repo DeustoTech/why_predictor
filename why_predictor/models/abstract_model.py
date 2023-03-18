@@ -46,7 +46,7 @@ class BasicModel(ABC):
         """Save model"""
         logger.debug("Saving model %s...", self.paramsname)
         assert self._model is not None
-        joblib.dump(self._model, self.path)
+        joblib.dump(self._model, self.path, compress=True)
         logger.debug("Model %s saved.", self.paramsname)
 
     def clear_model(self) -> None:
@@ -77,18 +77,36 @@ class BasicModel(ABC):
             error.name,
             self.paramsname,
         )
+        # Define full errors & predictions CSV file names
         error_filename = os.path.join(
-            self.base_path, "errors", f"{error.name}_{self.paramsname}.csv.gz"
+            self.base_path,
+            "errors",
+            "raw",
+            f"{error.name}_{self.paramsname}.csv.gz",
         )
+        predict_filename = os.path.join(
+            self.base_path,
+            "predictions",
+            f"{error.name}_{self.paramsname}.csv.gz",
+        )
+        # Obtain feat and out datasets
         test_features, test_output = datasets
+        # Generate predictions
         predictions = self.make_predictions(test_features, test_output)
+        predictions.to_csv(predict_filename, index=False, header=False)
+        # Clear model to save memory
+        self.clear_model()
+        # Generate error values
         error_values = error.value(
             test_output.iloc[:, NUM_HEADERS:],
-            predictions,
+            predictions.iloc[:, NUM_HEADERS:],
             median_value,
         )
+        # Save error values to CSV (errors/raw)
         error_values.to_csv(error_filename, index=False, header=False)
-        pd.concat(
+        # Concat 'dataset' & 'timeseries' columns to a sumatory of the errors
+        # per time series and save it to CSV file (errors/sum)
+        pdu.concat(
             [test_output[["dataset", "timeseries"]], error_values.sum(axis=1)],
             ignore_index=True,
             axis=1,
@@ -96,47 +114,94 @@ class BasicModel(ABC):
             columns={0: "dataset", 1: "timeseries", 2: self.paramsname}
         ).to_csv(
             os.path.join(
-                self.base_path, "sum_errors", f"{self.paramsname}.csv.gz"
+                self.base_path, "errors", "sum", f"{self.paramsname}.csv.gz"
             ),
             index=False,
         )
-        return error_values
+        # Return errors
+        return pdu.downcast(error_values)
 
-    def calculate_errors2(
+    def calculate_timeseries_errors_dataframe(
+        self,
+        datasets: Tuple[pd.DataFrame, pd.DataFrame],
+        error: ErrorType,
+        median_value: float,
+    ) -> pd.DataFrame:
+        """Calculate every timeseries's error for this model (FFORMA Column)"""
+        errors = pdu.concat(
+            [
+                datasets[0].iloc[:, :2],  # dataset and timeseries columns
+                self.calculate_errors(datasets, error, median_value),
+            ],
+            axis=1,
+        )
+        # Calculate error per timeseries
+        results = []
+        for dts, values in errors.groupby(["dataset", "timeseries"]):
+            results.append((*dts, values.iloc[:, 2:].stack().median()))
+        return pdu.DataFrame(
+            results, columns=["dataset", "timeseries", self.short_name]
+        ).set_index(["dataset", "timeseries"])
+
+    def calculate_errors_per_file(
         self,
         datasets: List[Tuple[str, str]],
         error: ErrorType,
         median_value: float,
     ) -> pd.DataFrame:
-        """Calculate Errors"""
+        """Calculate Errors per individual file"""
         base_path = self.base_path
+        # Define full errors CSV file name
         error_filename = os.path.join(
-            base_path, "errors", f"{error.name}_{self.paramsname}.csv.gz"
+            base_path,
+            "errors",
+            "raw",
+            f"{error.name}_{self.paramsname}.csv.gz",
         )
+        predict_filename = os.path.join(
+            self.base_path,
+            "predictions",
+            f"{error.name}_{self.paramsname}.csv.gz",
+        )
+        # Sanity check, remove previous error file if it exists
+        # (it shouldn't exist)
         if os.path.exists(error_filename):
             os.remove(error_filename)
+        # Initialize 'columns' dataframe for timeseries
         columns_df = pd.DataFrame()
+        # for each pair of 'dataset' & 'timeseries'
         for dataset, timeseries in datasets:
+            # Load features
             test_features = pdu.read_csv(
                 f"{base_path}/test/{dataset}/features/{timeseries}.csv.gz"
             )
+            # Load output
             test_output = pdu.read_csv(
                 f"{base_path}/test/{dataset}/output/{timeseries}.csv.gz"
             )
+            # Generate predictions
             predictions = self.make_predictions(test_features, test_output)
+            predictions.to_csv(
+                predict_filename, mode="a", index=False, header=False
+            )
+            # Generate errors and append them to CSV (errors/raw)
             error.value(
                 test_output.iloc[:, NUM_HEADERS:],
-                predictions,
+                predictions.iloc[:, NUM_HEADERS:],
                 median_value,
             ).to_csv(error_filename, mode="a", index=False, header=False)
+            # Append processed 'dataset' & 'timeseries' to columns dataframe
             columns_df = pd.concat(
                 [columns_df, test_output[["dataset", "timeseries"]]],
                 ignore_index=True,
             )
+            # Clear used variables (just in case)
             del test_features
             del test_output
             del predictions
+        # Clear model to save memory
         self.clear_model()
+        # Load generated error file
         errors = pdu.read_csv(error_filename, header=None)
         # Save sumatory of error
         pd.concat(
@@ -146,12 +211,12 @@ class BasicModel(ABC):
         ).rename(
             columns={0: "dataset", 1: "timeseries", 2: self.paramsname}
         ).to_csv(
-            os.path.join(base_path, "sum_errors", f"{self.paramsname}.csv.gz"),
+            os.path.join(base_path, "errors/sum", f"{self.paramsname}.csv.gz"),
             index=False,
         )
         return errors
 
-    def calculate_timeseries_error(
+    def calculate_timeseries_error(  # TODO update or delete
         self,
         data: Tuple[str, str],
         error: ErrorType,
@@ -161,17 +226,25 @@ class BasicModel(ABC):
         """Calculate timeseries's error for this model"""
         dataset, timeseries = data
         test_features = pdu.read_csv(
-            f"{self.base_path}/test/{dataset}/features/{timeseries}.csv.gz"
+            os.path.join(
+                self.base_path,
+                f"datasets/test/{dataset}/features/{timeseries}.csv.gz",
+            )
         )
         test_output = pdu.read_csv(
-            f"{self.base_path}/test/{dataset}/output/{timeseries}.csv.gz"
+            os.path.join(
+                self.base_path,
+                f"datasets/test/{dataset}/output/{timeseries}.csv.gz",
+            )
         )
         predictions = self.make_predictions(test_features, test_output)
         if not keep_model:
             self.clear_model()
         error_value: float = (
             error.value(
-                test_output.iloc[:, NUM_HEADERS:], predictions, median_value
+                test_output.iloc[:, NUM_HEADERS:],
+                predictions.iloc[:, NUM_HEADERS:],
+                median_value,
             )
             .stack()
             .median()
@@ -191,26 +264,29 @@ class ShiftedModel(BasicModel):
                 test_features.drop(["dataset", "timeseries"], axis=1)
             )
         )
+        predictions.columns = test_output.columns[NUM_HEADERS:3]
         for i in range(NUM_HEADERS + 1, test_output.shape[1]):
             # We generate a new features vector, removing first columns and
             # adding the already predicted values as features
             # 1 2 [3 4 5 6 7 ... 70 71 72 P1 P2]
-            features = pd.concat(
+            features = pdu.concat(
                 [test_features.iloc[:, i:], predictions], axis=1
             )
-            features = features.set_axis(
-                [f"col{i}" for i in range(1, features.shape[1] + 1)], axis=1
-            )
-            predictions = pd.concat(
+            features.columns = [
+                f"col{i}" for i in range(1, features.shape[1] + 1)
+            ]
+            predictions = pdu.concat(
                 [
                     predictions,
                     pd.Series(self.model.predict(features)),
                 ],
                 axis=1,
             )
-        # predictions.insert(0, "timeseries", test_features["timeseries"])
-        predictions.set_axis(test_output.columns[2:], axis=1, inplace=True)
-        return predictions
+            predictions.columns = test_output.columns[NUM_HEADERS : i + 1]
+        return pdu.concat(
+            [test_features[["dataset", "timeseries"]], predictions],
+            axis=1,
+        ).set_axis(test_output.columns, axis=1)
 
 
 class MultioutputModel(BasicModel):

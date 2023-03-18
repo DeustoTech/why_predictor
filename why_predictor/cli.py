@@ -11,13 +11,8 @@ from typing import Any
 import argcomplete  # type: ignore
 from dotenv import load_dotenv
 
-from .load_sets import find_csv_files, process_and_save
+from . import config, loading, phases
 from .models import Models
-from .training import (
-    final_fforma_prediction,
-    select_hyperparameters,
-    train_fforma,
-)
 
 logging.basicConfig(
     stream=sys.stdout,
@@ -91,6 +86,21 @@ def generate_parser() -> argparse.ArgumentParser:
         default=os.getenv("NUM_PREDICTIONS"),
         help="num of hours used as predictions",
     )
+    parser.add_argument(
+        "--save-datasets",
+        dest="save_datasets",
+        type=bool,
+        default=os.getenv("SAVE_DATASETS", "False") == "True",
+        help="save generated rolling-window datasets to disk",
+    )
+    parser.add_argument(
+        "--njobs",
+        type=int,
+        default=os.getenv("NJOBS"),
+        help="Number of CPUs to use. When negative values are provided, -1 "
+        + "means all CPUs, -2: means all CPUs but one, -3: means all CPUs but "
+        + "two...",
+    )
     generate_errors = parser.add_argument_group("Model training")
     models = os.getenv("MODELS_TRAINING")
     generate_errors.add_argument(
@@ -99,7 +109,7 @@ def generate_parser() -> argparse.ArgumentParser:
         choices=[f"{e.name}" for e in Models],
         nargs="+",
         type=str.upper,
-        default=json.loads(models) if models else "LR",
+        default=json.loads(models) if models else "SHIFT_LR",
         help="#Select what models to use:\n    "
         + "\n    ".join([f"{e.name} ({e.value.name})" for e in Models]),
     )
@@ -118,13 +128,21 @@ def generate_parser() -> argparse.ArgumentParser:
         default=os.getenv("TRAINING_PERCENTAGE_MODELS"),
         help="Percentage of the CSV files that will be used for training",
     )
-    generate_errors.add_argument(
+    exclusive = generate_errors.add_mutually_exclusive_group()
+    exclusive.add_argument(
         "--train-test-ratio-hyperparameters",
         dest="train_test_ratio_hyperparams",
         type=float,
         default=os.getenv("TRAIN_TEST_RATIO_MODELS"),
-        help="ratio of samples used for training "
+        help="ratioof samples used for training "
         + "(1 - this value will be used for testing)",
+    )
+    exclusive.add_argument(
+        "--initial-training-path",
+        dest="initial_training_path",
+        default=os.getenv("INITIAL_TRAINING_PATH"),
+        help="path to a folder where datasets will be used just for training"
+        + " of models in phase1 (if this mode if used)",
     )
     generate_fforma = parser.add_argument_group("FFORMA training")
     models_fforma = os.getenv("MODELS_FFORMA")
@@ -196,53 +214,72 @@ def generate_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def process_args(args: argparse.Namespace) -> None:
+    """process args and save them in config"""
+    config.DATASET_BASEPATH = args.dataset_basepath
+    config.DATASET_DIRNAME = args.dataset_dir_name
+    config.NUM_FEATURES = args.num_features
+    config.NUM_PREDICTIONS = args.num_predictions
+    config.SAVE_DATASETS = args.save_datasets
+    config.INITIAL_TRAINING_PATH = args.initial_training_path
+    config.NJOBS = args.njobs
+    # Hyperparams
+    config.MODELS_TRAINING = args.models_training
+    config.ERROR_TYPE_MODELS = args.error_type_models
+    config.TRAINING_PERCENTAGE_MODELS = args.training_percentage_hyperparams
+    config.TRAIN_TEST_RATIO_MODELS = args.train_test_ratio_hyperparams
+    # FFORMA
+    config.MODELS_FFORMA = args.models_fforma
+    config.ERROR_TYPE_FFORMA = args.error_type_fforma
+    config.TRAINING_PERCENTAGE_FFORMA = args.training_percentage_fforma
+    config.TRAIN_TEST_RATIO_FFORMA = args.train_test_ratio_fforma
+    # Final evaluation
+    config.TRAINING_PERCENTAGE_FFORMA_EVALUATION = (
+        args.training_percentage_fforma_eval
+    )
+    config.TRAIN_TEST_RATIO_FFORMA_EVALUATION = (
+        args.train_test_ratio_fforma_eval
+    )
+    config.ERROR_TYPE_FFORMA_EVALUATION = args.error_type_fforma_eval
+
+
 def main() -> None:
     """Main"""
     parser = generate_parser()
 
     # Parse args
     args = parser.parse_args()
+    process_args(args)
 
     # Set logger
     if args.verbose:
         logger.setLevel(logging.DEBUG)
-
     logger.debug("Args: %r", args)
-    series = find_csv_files(args.dataset_basepath, args.dataset_dir_name)
+
+    # Obtain available timeseries
+    series = loading.raw.retrieve_csv_series_dict(
+        args.dataset_basepath, args.dataset_dir_name
+    )
+
     # Execute select_hyperparameters if mode is: generate-hyperparams or full
     if args.mode in ["generate-hyperparams", "full"]:
         print()
-        logger.info("* Selecting best hyperparameters...")
-        select_hyperparameters(series, args)
+        phases.execute_phase_1(series)
     # Execute select_fforma if mode is:
     # generate-hypeparams, generate-fforma or full
     if args.mode in ["generate-fforma", "full"]:
         print()
-        logger.info("* Generating FFORMA...")
-        train_fforma(
-            series,
-            args.training_percentage_fforma,
-            args.train_test_ratio_fforma,
-            args,
-        )
+        phases.execute_phase_2(series)
     # Execute final_fforma_prediction if mode is: evaluate-fforma or full
     if args.mode in ["evaluate-fforma", "full"]:
         print()
-        logger.info("* Evaluating FFORMA...")
-        final_fforma_prediction(
-            series,
-            args.training_percentage_fforma_eval,
-            args.train_test_ratio_fforma_eval,
-            args,
-        )
+        phases.execute_phase_3(series)
     # Generate CSVs
     if args.mode == "generate-csvs":
         print()
         logger.info("* Generating CSVs...")
-        process_and_save(
-            series,
-            args.num_features,
-            args.num_predictions,
+        loading.datasets.process_and_save(
+            series, args.num_features, args.num_predictions
         )
 
 

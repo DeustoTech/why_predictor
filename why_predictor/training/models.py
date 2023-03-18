@@ -2,87 +2,56 @@
 import json
 import logging
 import os
-import shutil
 import string
-import sys
-from argparse import Namespace
-from typing import Any, Dict, List, Tuple
+from typing import Dict, List, Tuple
 
 import pandas as pd  # type: ignore
 import scikit_posthocs as sp  # type: ignore
 from matplotlib import pyplot as plt  # type: ignore
 from scipy.stats import friedmanchisquare  # type: ignore
 
+from .. import config, loading
 from .. import panda_utils as pdu
 from ..errors import ErrorType
-from ..load_sets import get_train_datasets, load_test_datasets
-from ..models import BasicModel, ModelGroups, Models
+from ..models import ModelGroups
 
 logger = logging.getLogger("logger")
 
 
-def select_hyperparameters(
-    series: Dict[str, List[str]], args: Namespace
-) -> None:
+def select_hyperparameters(series: Dict[str, List[str]]) -> None:
     """generate and fit hyperparameters"""
-    base_path = "model-training"
-    # Clean training directory
-    for check_path in [
-        os.path.join(base_path, "errors"),
-        os.path.join(base_path, "post-hoc"),
-        os.path.join(base_path, "test"),
-        os.path.join(base_path, "train"),
-    ]:
-        if os.path.exists(check_path):
-            shutil.rmtree(check_path)
     # Generate models
+    logger.debug("Generating best hyperparameters for models...")
     train_to_fit_hyperparameters(
-        args.models_training,
-        get_train_datasets(
+        config.MODELS_TRAINING,
+        loading.datasets.get_train_datasets(
             series,
-            args.training_percentage_hyperparams,
-            args.num_features,
-            args.num_predictions,
-            args.train_test_ratio_hyperparams,
+            config.TRAINING_PERCENTAGE_MODELS,
+            (config.NUM_FEATURES, config.NUM_PREDICTIONS),
+            config.TRAIN_TEST_RATIO_MODELS,
+            config.TRAINING_PATH,
         ),
-        ErrorType[args.error_type_models],
-        base_path,
+        ErrorType[config.ERROR_TYPE_MODELS],
+        config.TRAINING_PATH,
     )
 
 
-def get_best_trained_model(models: List[str], base_path: str) -> BasicModel:
-    """Get best trained model"""
-    # Find best model
-    _models: List[Tuple[float, str, Dict[str, Any]]] = []
-    for model_name in models:
-        filename = f"{base_path}/hyperparameters/{model_name}.json"
-        error_value, hyperparameters = load_error_and_hyperparameters(filename)
-        _models.append((error_value, model_name, hyperparameters))
-    _models.sort(key=lambda x: x[0])
-    error_value, model_name, hyperparameters = _models[0]
-    logger.debug(
-        "Best model: %s => %f.6 %r", model_name, error_value, hyperparameters
+def select_hyperparameters_initial_path(series: Dict[str, List[str]]) -> None:
+    """generate and fit hyperparameters"""
+    # Generate models
+    logger.debug("Generating best hyperparameters (with specific train)...")
+    train_to_fit_hyperparameters(
+        config.MODELS_TRAINING,
+        loading.datasets.get_train_datasets_from_initial_path(
+            series,
+            config.TRAINING_PERCENTAGE_MODELS,
+            (config.NUM_FEATURES, config.NUM_PREDICTIONS),
+            config.INITIAL_TRAINING_PATH,
+            config.TRAINING_PATH,
+        ),
+        ErrorType[config.ERROR_TYPE_MODELS],
+        config.TRAINING_PATH,
     )
-    # Create model and train it
-    model: BasicModel = Models[model_name].value(hyperparameters, base_path)
-    return model
-
-
-def load_error_and_hyperparameters(
-    filename: str,
-) -> Tuple[float, Dict[str, Any]]:
-    """load error and hyperparameters"""
-    error: float = 0.0
-    hyperparameters: Dict[str, Any]
-    try:
-        with open(filename, encoding="utf8") as fhyper:
-            error_text, hyper_text = fhyper.read().split("|")
-            error = float(error_text)
-            hyperparameters = json.loads(hyper_text)
-    except FileNotFoundError:
-        logger.error("File '%s' not found. Aborting...", filename)
-        sys.exit(1)
-    return (error, hyperparameters)
 
 
 def train_to_fit_hyperparameters(
@@ -92,6 +61,7 @@ def train_to_fit_hyperparameters(
     base_path: str,
 ) -> None:
     """Train dataset to obtain the best hyperparameter set"""
+    logger.debug("Training models to fit hyperparameters...")
     train_features, train_output = datasets
     # Train models
     models_dict = {}
@@ -102,20 +72,23 @@ def train_to_fit_hyperparameters(
             error,
             base_path,
         )
-    num_features = train_features.shape[1] - 2
-    num_predictions = train_features.shape[1] - 2
+    # Clean data to free memory
     del train_features
     del train_output
     del datasets
-    test_features, test_output = load_test_datasets(
-        base_path, num_features, num_predictions
+    # Get test datasets
+    test_features, test_output = loading.datasets.load_test_datasets(
+        base_path, config.NUM_FEATURES, config.NUM_PREDICTIONS
     )
+    # Fit hyperparams
     for model in models_dict.values():
         model.fit(test_features, test_output)
+    # Generate hyperparams_list to use in the friedman test
     hyperparams_list = [
         h for x in models_dict.values() for h in x.hyper_params.keys()
     ]
     logger.debug("Hyperparam list: %r", hyperparams_list)
+    # Execute friedman test
     friedman_test_with_post_hoc(hyperparams_list, base_path)
 
 
@@ -131,7 +104,7 @@ def friedman_test_with_post_hoc(
     # Generate dataset
     sum_errors: List[pd.DataFrame] = []
     for model in models:
-        filename = os.path.join(base_path, "sum_errors", f"{model}.csv.gz")
+        filename = os.path.join(base_path, "errors", "sum", f"{model}.csv.gz")
         sum_errors.append(
             pdu.read_csv(filename).set_index(["dataset", "timeseries"])
         )
@@ -140,7 +113,10 @@ def friedman_test_with_post_hoc(
     # Calculate friedman chi-square
     logger.debug("Friedman\n%r", friedman_df)
     f_test = friedmanchisquare(*[friedman_df[k] for k in columns])
-    logger.debug("Friedmanchisquare: %r", f_test)
+    logger.debug("Friedmanchisquare result: %r", f_test)
+    result_filename = os.path.join(base_path, "post-hoc", "result.txt")
+    with open(result_filename, "w", encoding="utf8") as f_result:
+        f_result.write(f"Friedmanchisquare result: {f_test}\n")
     # Calculate post-hoc if p_value < 0.05
     if f_test.pvalue < 0.05:
         new_columns = dict(zip(string.ascii_uppercase, columns))
@@ -159,9 +135,6 @@ def friedman_test_with_post_hoc(
         filename = os.path.join(base_path, "post-hoc", "posthoc.png")
         logger.debug("Saving diagram to: %s", filename)
         plt.savefig(filename)
-        with open(
-            os.path.join(base_path, "post-hoc", "legend.csv"),
-            "w",
-            encoding="utf8",
-        ) as f_legend:
+        legend_filename = os.path.join(base_path, "post-hoc", "legend.csv")
+        with open(legend_filename, "w", encoding="utf8") as f_legend:
             f_legend.write(json.dumps(new_columns, indent=4))

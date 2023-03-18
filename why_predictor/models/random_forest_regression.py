@@ -5,6 +5,7 @@ import pandas as pd  # type: ignore
 from sklearn.ensemble import RandomForestRegressor  # type: ignore
 from sklearn.multioutput import RegressorChain  # type: ignore
 
+from .. import config
 from .abstract_model import NUM_HEADERS, MultioutputModel, ShiftedModel
 
 logger = logging.getLogger("logger")
@@ -20,11 +21,17 @@ class ShiftedRFRegressor(ShiftedModel):
         self, features: pd.DataFrame, output: pd.DataFrame
     ) -> None:
         """Generate model"""
-        shifted_rf_model = RandomForestRegressor(**self.hyperparams, n_jobs=-1)
+        logger.debug(
+            "Training %s model (%s)...", self.short_name, self.hyperparams
+        )
+        shifted_rf_model = RandomForestRegressor(
+            **self.hyperparams, n_jobs=config.NJOBS
+        )
         self._model = shifted_rf_model.fit(
             features.drop(["dataset", "timeseries"], axis=1),
             output.iloc[:, NUM_HEADERS],
         )
+        logger.debug("%s model trained.", self.short_name)
 
 
 class ChainedRFRegressor(MultioutputModel):
@@ -37,13 +44,17 @@ class ChainedRFRegressor(MultioutputModel):
         self, features: pd.DataFrame, output: pd.DataFrame
     ) -> None:
         """Generate model"""
+        logger.debug(
+            "Training %s model (%s)...", self.short_name, self.hyperparams
+        )
         chained_rf_model = RegressorChain(
-            RandomForestRegressor(**self.hyperparams, n_jobs=-1)
+            RandomForestRegressor(**self.hyperparams, n_jobs=config.NJOBS)
         )
         self._model = chained_rf_model.fit(
             features.drop(["dataset", "timeseries"], axis=1),
             output.drop(["dataset", "timeseries"], axis=1),
         )
+        logger.debug("%s model trained.", self.short_name)
 
 
 class MultioutputRFRegressor(MultioutputModel):
@@ -56,8 +67,14 @@ class MultioutputRFRegressor(MultioutputModel):
         self, features: pd.DataFrame, output: pd.DataFrame
     ) -> None:
         """Generate model"""
-        multi_rf_model = RandomForestRegressor(**self.hyperparams, n_jobs=-1)
+        logger.debug(
+            "Training %s model (%s)...", self.short_name, self.hyperparams
+        )
+        multi_rf_model = RandomForestRegressor(
+            **self.hyperparams, n_jobs=config.NJOBS
+        )
         self._model = multi_rf_model.fit(
             features.drop(["dataset", "timeseries"], axis=1),
             output.drop(["dataset", "timeseries"], axis=1),
         )
+        logger.debug("%s model trained.", self.short_name)

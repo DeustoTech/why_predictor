@@ -15,8 +15,11 @@ disk/
 model-training/
 fforma-training/
 feats_v3.02.csv
-datasets/
+./datasets/
 context.csv
+phase1-model-training
+phase2-fforma-training
+phase3-fforma-evaluation
 
 # Libraries
 scikit_posthocs

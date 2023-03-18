@@ -66,9 +66,7 @@ class RFHyperParams(TypedDict):
     # ccp_alpha: List[float]
 
 
-SGDHyperParamKeys = Literal[
-    "alpha",
-]
+SGDHyperParamKeys = Literal["alpha",]
 
 
 class SGDHyperParams(TypedDict):

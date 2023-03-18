@@ -23,12 +23,16 @@ class ShiftedSupportVectorRegressor(ShiftedModel):
         self, features: pd.DataFrame, output: pd.DataFrame
     ) -> None:
         """Generate model"""
+        logger.debug(
+            "Training %s model (%s)...", self.short_name, self.hyperparams
+        )
         # We train with only the column for the first hour
         shifted_svr_model = LinearSVR(**self.hyperparams, max_iter=10000)
         self._model = shifted_svr_model.fit(
             features.drop(["dataset", "timeseries"], axis=1),
             output.iloc[:, NUM_HEADERS],
         )
+        logger.debug("%s model trained.", self.short_name)
 
 
 class ChainedSupportVectorRegressor(MultioutputModel):
@@ -41,6 +45,9 @@ class ChainedSupportVectorRegressor(MultioutputModel):
         self, features: pd.DataFrame, output: pd.DataFrame
     ) -> None:
         """Generate model"""
+        logger.debug(
+            "Training %s model (%s)...", self.short_name, self.hyperparams
+        )
         # We train with only the column for the first hour
         chained_svr_model = RegressorChain(
             LinearSVR(**self.hyperparams, max_iter=10000)
@@ -49,6 +56,7 @@ class ChainedSupportVectorRegressor(MultioutputModel):
             features.drop(["dataset", "timeseries"], axis=1),
             output.drop(["dataset", "timeseries"], axis=1),
         )
+        logger.debug("%s model trained.", self.short_name)
 
 
 class MultioutputSVMRegressor(MultioutputModel):
@@ -61,6 +69,9 @@ class MultioutputSVMRegressor(MultioutputModel):
         self, features: pd.DataFrame, output: pd.DataFrame
     ) -> None:
         """Generate model"""
+        logger.debug(
+            "Training %s model (%s)...", self.short_name, self.hyperparams
+        )
         multi_svr_model = MultiOutputRegressor(
             LinearSVR(**self.hyperparams, max_iter=10000)
         )
@@ -68,3 +79,4 @@ class MultioutputSVMRegressor(MultioutputModel):
             features.drop(["dataset", "timeseries"], axis=1),
             output.drop(["dataset", "timeseries"], axis=1),
         )
+        logger.debug("%s model trained.", self.short_name)

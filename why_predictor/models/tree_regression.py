@@ -20,11 +20,15 @@ class ShiftedDecissionTreeRegressor(ShiftedModel):
         self, features: pd.DataFrame, output: pd.DataFrame
     ) -> None:
         """Generate model"""
+        logger.debug(
+            "Training %s model (%s)...", self.short_name, self.hyperparams
+        )
         shifted_dt_model = DecisionTreeRegressor(**self.hyperparams)
         self._model = shifted_dt_model.fit(
             features.drop(["dataset", "timeseries"], axis=1),
             output.iloc[:, NUM_HEADERS],
         )
+        logger.debug("%s model trained.", self.short_name)
 
 
 class ChainedDecissionTreeRegressor(MultioutputModel):
@@ -37,6 +41,9 @@ class ChainedDecissionTreeRegressor(MultioutputModel):
         self, features: pd.DataFrame, output: pd.DataFrame
     ) -> None:
         """Generate model"""
+        logger.debug(
+            "Training %s model (%s)...", self.short_name, self.hyperparams
+        )
         chained_dt_model = RegressorChain(
             DecisionTreeRegressor(**self.hyperparams)
         )
@@ -44,6 +51,7 @@ class ChainedDecissionTreeRegressor(MultioutputModel):
             features.drop(["dataset", "timeseries"], axis=1),
             output.drop(["dataset", "timeseries"], axis=1),
         )
+        logger.debug("%s model trained.", self.short_name)
 
 
 class MultioutputDecissionTreeRegressor(MultioutputModel):
@@ -56,8 +64,12 @@ class MultioutputDecissionTreeRegressor(MultioutputModel):
         self, features: pd.DataFrame, output: pd.DataFrame
     ) -> None:
         """Generate model"""
+        logger.debug(
+            "Training %s model (%s)...", self.short_name, self.hyperparams
+        )
         multi_dt_model = DecisionTreeRegressor(**self.hyperparams)
         self._model = multi_dt_model.fit(
             features.drop(["dataset", "timeseries"], axis=1),
             output.drop(["dataset", "timeseries"], axis=1),
         )
+        logger.debug("%s model trained.", self.short_name)
