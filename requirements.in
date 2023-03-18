@@ -1,0 +1,11 @@
+# requirements.in
+argcomplete
+matplotlib
+nose2
+numpy
+pandas
+parameterized
+python-dotenv
+scikit-learn
+scikit-posthocs
+scipy
