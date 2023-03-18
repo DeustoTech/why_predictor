@@ -187,24 +187,6 @@ class TestChainedSVMRegressorModel(unittest.TestCase):
             )
         )
 
-    def test_calculate_timeseries_errors_error0(self):
-        """test calculate_errors"""
-        # Init
-        median_value = np.nanmean(self.feat.iloc[:, 2:])
-        base_path = "tests/results/datasets/test/mydataset"
-        for folder in ["features", "output"]:
-            os.makedirs(os.path.join(base_path, folder))
-        filename = os.path.join(base_path, "features", "mytimeseries.csv.gz")
-        self.feat.iloc[:2].to_csv(filename, index=False)
-        filename = os.path.join(base_path, "output", "mytimeseries.csv.gz")
-        self.out.iloc[:2].to_csv(filename, index=False)
-        # Execute
-        value = self.model.calculate_timeseries_error(
-            ["mydataset", "mytimeseries"], ErrorType.MAPE2, median_value
-        )
-        # Validate
-        self.assertAlmostEqual(value, 0.0, places=3)
-
     def test_make_predictions(self):
         """Test .make_predictions"""
         # Init
@@ -358,23 +340,3 @@ class TestChainedSVMRegressorModel(unittest.TestCase):
                 + f"{SHORT_NAME}_{json.dumps(self.hyperparams)}.csv.gz"
             )
         )
-
-    def test_calculate_timeseries_errors(self):
-        """test calculate_timeseries_errors"""
-        # Init
-        index = self.feat.shape[0] - 2
-        median_value = np.nanmean(self.feat.iloc[:, 2:])
-        base_path = "tests/results/datasets/test/mydataset"
-        for folder in ["features", "output"]:
-            os.makedirs(os.path.join(base_path, folder))
-        filename = os.path.join(base_path, "features", "mytimeseries.csv.gz")
-        self.feat.iloc[index:].to_csv(filename, index=False)
-        filename = os.path.join(base_path, "output", "mytimeseries.csv.gz")
-        self.out.iloc[index:].to_csv(filename, index=False)
-        # Execute
-        value = self.model.calculate_timeseries_error(
-            ["mydataset", "mytimeseries"], ErrorType.MAPE2, median_value
-        )
-        # Validate
-        self.assertGreater(value, 0.0)
-        self.assertLessEqual(value, 1.30)

@@ -216,41 +216,6 @@ class BasicModel(ABC):
         )
         return errors
 
-    def calculate_timeseries_error(  # TODO update or delete
-        self,
-        data: Tuple[str, str],
-        error: ErrorType,
-        median_value: float,
-        keep_model: bool = True,
-    ) -> float:
-        """Calculate timeseries's error for this model"""
-        dataset, timeseries = data
-        test_features = pdu.read_csv(
-            os.path.join(
-                self.base_path,
-                f"datasets/test/{dataset}/features/{timeseries}.csv.gz",
-            )
-        )
-        test_output = pdu.read_csv(
-            os.path.join(
-                self.base_path,
-                f"datasets/test/{dataset}/output/{timeseries}.csv.gz",
-            )
-        )
-        predictions = self.make_predictions(test_features, test_output)
-        if not keep_model:
-            self.clear_model()
-        error_value: float = (
-            error.value(
-                test_output.iloc[:, NUM_HEADERS:],
-                predictions.iloc[:, NUM_HEADERS:],
-                median_value,
-            )
-            .stack()
-            .median()
-        )
-        return error_value
-
 
 class ShiftedModel(BasicModel):
     """Shifted Basic Model"""
