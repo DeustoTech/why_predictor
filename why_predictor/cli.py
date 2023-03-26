@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-import argcomplete  # type: ignore
+import argcomplete
 from dotenv import load_dotenv
 
 from . import config, loading, phases

@@ -61,12 +61,14 @@ class RFHyperParams(TypedDict):
     # max_features: List[Union[int, float, str]]
     # max_leaf_nodes: List[Union[None, int]]
     # min_impurity_decrease: List[float]
-    # bootstrap: List[bool]
     # oob_score: Dict[str, List[bool]]
+    # bootstrap: List[bool]
     # ccp_alpha: List[float]
 
 
-SGDHyperParamKeys = Literal["alpha",]
+SGDHyperParamKeys = Literal[
+    "alpha",
+]
 
 
 class SGDHyperParams(TypedDict):

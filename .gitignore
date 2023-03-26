@@ -16,7 +16,7 @@ model-training/
 fforma-training/
 feats_v3.02.csv
 ./datasets/
-context.csv
+./context.csv
 phase1-model-training
 phase2-fforma-training
 phase3-fforma-evaluation

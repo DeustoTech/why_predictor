@@ -173,15 +173,19 @@ class TestShiftedStochasticGradientDescentRegressorModel(unittest.TestCase):
             for value in errors[col]:
                 self.assertGreaterEqual(value, 0.0)
                 self.assertGreaterEqual(value, 100000000000)
-        self.assertTrue(os.path.exists(
-            "tests/results/errors/raw/" +
-            f"{ErrorType.MAPE2.name}_{SHORT_NAME}_" +
-            f"{json.dumps(self.hyperparams)}.csv.gz"
-        ))
-        self.assertTrue(os.path.exists(
-            "tests/results/errors/sum/" +
-            f"{SHORT_NAME}_{json.dumps(self.hyperparams)}.csv.gz"
-        ))
+        self.assertTrue(
+            os.path.exists(
+                "tests/results/errors/raw/"
+                + f"{ErrorType.MAPE2.name}_{SHORT_NAME}_"
+                + f"{json.dumps(self.hyperparams)}.csv.gz"
+            )
+        )
+        self.assertTrue(
+            os.path.exists(
+                "tests/results/errors/sum/"
+                + f"{SHORT_NAME}_{json.dumps(self.hyperparams)}.csv.gz"
+            )
+        )
 
     def test_calculate_errors_per_file(self) -> None:
         """test calculate_errors_per_file"""
