@@ -1,7 +1,7 @@
 """Test functions for panda_utils module"""
 import unittest
 
-import numpy as np  # type: ignore
+import numpy as np
 import pandas as pd  # type: ignore
 from pandas.testing import assert_frame_equal  # type: ignore
 
@@ -11,7 +11,7 @@ from why_predictor import panda_utils as pdu
 class TestPandaUtils(unittest.TestCase):
     """test panda_utils module"""
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.dtf = pd.DataFrame(
             {
                 "col1": [1, 2, 3],
@@ -21,7 +21,7 @@ class TestPandaUtils(unittest.TestCase):
             }
         )
 
-    def test_downcast(self):
+    def test_downcast(self) -> None:
         """Test downcast function"""
         expected_df = pd.DataFrame(
             {
@@ -34,7 +34,7 @@ class TestPandaUtils(unittest.TestCase):
         downcasted_df = pdu.downcast(self.dtf)
         assert_frame_equal(downcasted_df, expected_df)
 
-    def test_dataframe(self):
+    def test_dataframe(self) -> None:
         """Test DataFrame wrapper"""
         expected_df = pd.DataFrame(
             {
@@ -49,7 +49,7 @@ class TestPandaUtils(unittest.TestCase):
         )
         assert_frame_equal(wrapped_df, expected_df)
 
-    def test_concat(self):
+    def test_concat(self) -> None:
         """Test concat wrapper"""
         df1 = pd.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
         df2 = pd.DataFrame({"A": [7, 8, 9], "B": [10, 11, 12]})
@@ -63,7 +63,7 @@ class TestPandaUtils(unittest.TestCase):
         wrapped_df = pdu.concat([df1, df2])
         assert_frame_equal(wrapped_df, expected_df)
 
-    def test_read_csv(self):
+    def test_read_csv(self) -> None:
         """Test read_csv wrapper"""
         dtf = pdu.read_csv("tests/data/maxpower.csv.gz")
         self.assertEqual(dtf.kWh.dtype, np.float32)

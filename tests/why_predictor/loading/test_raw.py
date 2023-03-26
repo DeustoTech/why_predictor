@@ -1,5 +1,6 @@
 """Unit tests for loading module"""
 import unittest
+from typing import Any, Dict, List
 from unittest.mock import patch
 
 from why_predictor import loading
@@ -8,7 +9,7 @@ from why_predictor import loading
 class LoadingRawDatasetsTest(unittest.TestCase):
     """loading functions test"""
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.series = {
             "dataset1": [
                 "001.csv.gz",
@@ -25,10 +26,10 @@ class LoadingRawDatasetsTest(unittest.TestCase):
         }
 
     @patch("random.randint")
-    def test_select_training_set_0(self, mock_randint):
+    def test_select_training_set_0(self, mock_randint: Any) -> None:
         """test select_training_set (0)"""
         mock_randint.side_effect = []
-        expected_training_set = {
+        expected_training_set: Dict[str, List[str]] = {
             "dataset1": [],
             "dataset2": [],
         }
@@ -39,7 +40,7 @@ class LoadingRawDatasetsTest(unittest.TestCase):
         self.assertEqual(testing_set, self.series)
 
     @patch("random.randint")
-    def test_select_training_set_25(self, mock_randint):
+    def test_select_training_set_25(self, mock_randint: Any) -> None:
         """test select_training_set (25)"""
         mock_randint.side_effect = [0, 2]
         expected_training_set = {
@@ -57,7 +58,7 @@ class LoadingRawDatasetsTest(unittest.TestCase):
         self.assertEqual(testing_set, expected_no_training_set)
 
     @patch("random.randint")
-    def test_select_training_set_50(self, mock_randint):
+    def test_select_training_set_50(self, mock_randint: Any) -> None:
         """test select_training_set (50)"""
         mock_randint.side_effect = [0, 2, 1, 0]
         expected_training_set = {
@@ -75,10 +76,10 @@ class LoadingRawDatasetsTest(unittest.TestCase):
         self.assertEqual(testing_set, expected_no_training_set)
 
     @patch("random.randint")
-    def test_select_training_set_100(self, mock_randint):
+    def test_select_training_set_100(self, mock_randint: Any) -> None:
         """test select_training_set (100)"""
         mock_randint.side_effect = [0, 0, 0, 0, 0, 0, 0, 0]
-        expected_no_training_set = {
+        expected_no_training_set: Dict[str, List[str]] = {
             "dataset1": [],
             "dataset2": [],
         }
@@ -89,14 +90,14 @@ class LoadingRawDatasetsTest(unittest.TestCase):
         self.assertEqual(testing_set, expected_no_training_set)
 
     @patch("random.randint")
-    def test_select_training_set_empty(self, mock_randint):
+    def test_select_training_set_empty(self, mock_randint: Any) -> None:
         """test select_training_set"""
         self.series = {
             "dataset1": [],
             "dataset2": [],
         }
         mock_randint.side_effect = []
-        expected_set = {
+        expected_set: Dict[str, List[str]] = {
             "dataset1": [],
             "dataset2": [],
         }
@@ -107,7 +108,7 @@ class LoadingRawDatasetsTest(unittest.TestCase):
         self.assertEqual(testing_set, expected_set)
 
     @patch("random.randint")
-    def test_select_training_set_filtered(self, mock_randint):
+    def test_select_training_set_filtered(self, mock_randint: Any) -> None:
         """test select_training_set_filtered"""
         mock_randint.side_effect = [0, 2, 1, 0, 0, 2]
         filtered_files = {"dataset1": ["001.csv.gz", "003.csv.gz"]}
@@ -127,7 +128,7 @@ class LoadingRawDatasetsTest(unittest.TestCase):
         self.assertEqual(training_set, expected_training_set)
         self.assertEqual(testing_set, expected_no_training_set)
 
-    def test_get_datasets_names(self):
+    def test_get_datasets_names(self) -> None:
         """test get_datasets"""
         data_path = "tests/data"
         self.assertListEqual(

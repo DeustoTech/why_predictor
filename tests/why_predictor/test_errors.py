@@ -11,7 +11,7 @@ from why_predictor import errors
 class TestErrorCalculation(unittest.TestCase):
     """Tests for errors module"""
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.output = pd.DataFrame({"col1": [2, 0, 1], "col2": [1, 1, 1]})
         self.predictions = pd.DataFrame({"col1": [1, 0, 1], "col2": [1, 2, 3]})
         self.unsig_out = pd.DataFrame(
@@ -35,7 +35,7 @@ class TestErrorCalculation(unittest.TestCase):
             }
         )
 
-    def test_calculate_mape2(self):
+    def test_calculate_mape2(self) -> None:
         """test calculate_mape2"""
         expected = pd.DataFrame(
             {"col1": [0.5, 0.0, 0.0], "col2": [0.0, 1.0, 2.0]}
@@ -44,7 +44,7 @@ class TestErrorCalculation(unittest.TestCase):
         result = errors.calculate_mape2(self.output, self.predictions, mean)
         assert_frame_equal(result, expected)
 
-    def test_calculate_mape2_unsigned(self):
+    def test_calculate_mape2_unsigned(self) -> None:
         """test calculate_mape2 (unsigned)"""
         expected = pd.DataFrame(
             {
@@ -60,7 +60,7 @@ class TestErrorCalculation(unittest.TestCase):
         result = errors.calculate_mape2(self.unsig_out, self.unsig_pred, mean)
         assert_frame_equal(result, expected.astype("float32"), atol=0.00001)
 
-    def test_calculate_mape2_error(self):
+    def test_calculate_mape2_error(self) -> None:
         """test calculate_mape2 (different dimensions)"""
         pred = pd.DataFrame(
             {"col1": [0.5, 1, 0], "col2": [0, 1, 2.0], "col3": [0.0, 1, 1]}
@@ -70,7 +70,7 @@ class TestErrorCalculation(unittest.TestCase):
             ValueError, errors.calculate_mape2, self.output, pred, mean
         )
 
-    def test_calculate_mape(self):
+    def test_calculate_mape(self) -> None:
         """test calculate_mape"""
         expected = pd.DataFrame(
             {"col1": [0.5, np.NaN, 0.0], "col2": [0.0, 1.0, 2.0]}
@@ -78,7 +78,7 @@ class TestErrorCalculation(unittest.TestCase):
         result = errors.calculate_mape(self.output, self.predictions)
         assert_frame_equal(result, expected)
 
-    def test_calculate_mape_unsigned(self):
+    def test_calculate_mape_unsigned(self) -> None:
         """test calculate_mape (unsigned)"""
         expected = pd.DataFrame(
             {
@@ -94,20 +94,20 @@ class TestErrorCalculation(unittest.TestCase):
         result = errors.calculate_mape(self.unsig_out, self.unsig_pred, mean)
         assert_frame_equal(result, expected.astype("float32"), atol=0.00001)
 
-    def test_calculate_mape_error(self):
+    def test_calculate_mape_error(self) -> None:
         """test calculate_mape (different dimensions)"""
         pred = pd.DataFrame(
             {"col1": [0.5, 1, 0], "col2": [0, 1, 2.0], "col3": [0.0, 1, 1]}
         )
         self.assertRaises(ValueError, errors.calculate_mape, self.output, pred)
 
-    def test_calculate_mae(self):
+    def test_calculate_mae(self) -> None:
         """test calculate_mae"""
         expected = pd.DataFrame({"col1": [1, 0, 0], "col2": [0, 1, 2]})
         result = errors.calculate_mae(self.output, self.predictions)
         assert_frame_equal(result, expected.astype("float32"))
 
-    def test_calculate_mae_unsigned(self):
+    def test_calculate_mae_unsigned(self) -> None:
         """test calculate_mae (unsigned)"""
         expected = pd.DataFrame(
             {
@@ -123,20 +123,20 @@ class TestErrorCalculation(unittest.TestCase):
         result = errors.calculate_mae(self.unsig_out, self.unsig_pred, mean)
         assert_frame_equal(result, expected.astype("float32"), atol=0.00001)
 
-    def test_calculate_mae_error(self):
+    def test_calculate_mae_error(self) -> None:
         """test calculate_mae (different dimensions)"""
         pred = pd.DataFrame(
             {"col1": [0.5, 1, 0], "col2": [0, 1, 2.0], "col3": [0.0, 1, 1]}
         )
         self.assertRaises(ValueError, errors.calculate_mae, self.output, pred)
 
-    def test_calculate_rmse(self):
+    def test_calculate_rmse(self) -> None:
         """test calculate_rmse"""
         expected = pd.DataFrame({"col1": [1, 0, 0], "col2": [0, 1, 4]})
         result = errors.calculate_rmse(self.output, self.predictions)
         assert_frame_equal(result, expected.astype("float32"))
 
-    def test_calculate_rmse_unsigned(self):
+    def test_calculate_rmse_unsigned(self) -> None:
         """test calculate_rmse (unsigned)"""
         expected = pd.DataFrame(
             {
@@ -152,14 +152,14 @@ class TestErrorCalculation(unittest.TestCase):
         result = errors.calculate_rmse(self.unsig_out, self.unsig_pred, mean)
         assert_frame_equal(result, expected.astype("float32"), atol=0.00001)
 
-    def test_calculate_rmse_error(self):
+    def test_calculate_rmse_error(self) -> None:
         """test calculate_rmse (different dimensions)"""
         pred = pd.DataFrame(
             {"col1": [0.5, 1, 0], "col2": [0, 1, 2.0], "col3": [0.0, 1, 1]}
         )
         self.assertRaises(ValueError, errors.calculate_rmse, self.output, pred)
 
-    def test_calculate_smape(self):
+    def test_calculate_smape(self) -> None:
         """test calculate_smape"""
         expected = pd.DataFrame(
             {"col1": [0.6666667, np.NaN, 0.0], "col2": [0.0, 0.666667, 1.0]}
@@ -167,7 +167,7 @@ class TestErrorCalculation(unittest.TestCase):
         result = errors.calculate_smape(self.output, self.predictions)
         assert_frame_equal(result, expected)
 
-    def test_calculate_smape_unsigned(self):
+    def test_calculate_smape_unsigned(self) -> None:
         """test calculate_smape (unsigned)"""
         expected = pd.DataFrame(
             {
@@ -193,21 +193,21 @@ class TestErrorCalculation(unittest.TestCase):
         result = errors.calculate_smape(self.unsig_out, self.unsig_pred, mean)
         assert_frame_equal(result, expected, atol=0.00001)
 
-    def test_calculate_smape_error(self):
+    def test_calculate_smape_error(self) -> None:
         """test calculate_smape (different dimensions)"""
         prd = pd.DataFrame(
             {"col1": [0.5, 1, 0], "col2": [0, 1, 2.0], "col3": [0.0, 1, 1]}
         )
         self.assertRaises(ValueError, errors.calculate_smape, self.output, prd)
 
-    def test_error_type(self):
+    def test_error_type(self) -> None:
         """test ErrorType"""
         expected = pd.DataFrame({"col1": [1, 0, 0], "col2": [0, 1, 2]})
         error_type = errors.ErrorType.MAE
         result = error_type.value(self.output, self.predictions)
         assert_frame_equal(result, expected.astype("float32"))
 
-    def test_error_type_mape2(self):
+    def test_error_type_mape2(self) -> None:
         """test ErrorType.MAPE2"""
         # Init
         expected = pd.DataFrame(

@@ -13,24 +13,25 @@ from why_predictor.phases import phase3
 class TestPhase3Functions(unittest.TestCase):
     """tests phase 3"""
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.base_path = "tests/results"
         os.makedirs(self.base_path)
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         shutil.rmtree(self.base_path, ignore_errors=True)
 
     @patch("why_predictor.config.TRAINING_PATH", "tests/results")
-    def test_delete_previous_execution(self):
-        """test delete_previous_execution"""
-        os.makedirs(self.base_path, exist_ok=True)
-        self.assertTrue(os.path.exists(self.base_path))
-        phase3.delete_previous_execution(self.base_path)
-        self.assertFalse(os.path.exists(self.base_path))
+    def test_delete_previous_execution(self) -> None:
+        """test delete_previous_execution (phase3)"""
+        phase3_path = self.base_path
+        os.makedirs(phase3_path, exist_ok=True)
+        self.assertTrue(os.path.exists(phase3_path))
+        phase3.delete_previous_execution(phase3_path)
+        self.assertFalse(os.path.exists(phase3_path))
 
     @patch("why_predictor.config.NUM_FEATURES", 66)
     @patch("why_predictor.config.NUM_PREDICTIONS", 4)
-    def test_generate_phase2_tree(self):
+    def test_generate_phase2_tree(self) -> None:
         """test generate_phase2_tree"""
         num_features = 66
         num_predictions = 4
@@ -98,7 +99,7 @@ class TestPhase3Functions(unittest.TestCase):
         self.assertEqual(len(df_test_features), 0)
         self.assertEqual(len(df_test_output), 0)
 
-    def test_move_models_to_phase3(self):
+    def test_move_models_to_phase3(self) -> None:
         """test phase3.move_models_to_phase3"""
         # Init
         phase2_path = os.path.join(self.base_path, "phase2")

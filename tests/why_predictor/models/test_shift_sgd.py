@@ -5,7 +5,7 @@ import os
 import shutil
 import unittest
 
-import numpy as np  # type: ignore
+import numpy as np
 import pandas as pd  # type: ignore
 
 from why_predictor.errors import ErrorType
@@ -18,7 +18,7 @@ SHORT_NAME = "SHIFT_SGD"
 class TestShiftedStochasticGradientDescentRegressorBasic(unittest.TestCase):
     """Tests for ShiftedStochasticGradientDescentRegressor (Basic info)"""
 
-    def setUp(self):
+    def setUp(self) -> None:
         num_features = 72
         os.makedirs("tests/results/models")
         os.makedirs("tests/results/hyperparameters")
@@ -33,29 +33,29 @@ class TestShiftedStochasticGradientDescentRegressorBasic(unittest.TestCase):
             self.hyperparams, "tests/results"
         )
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         shutil.rmtree("tests/results")
 
-    def test_hyperparams(self):
+    def test_hyperparams(self) -> None:
         """Test .hyperparams"""
         self.assertEqual(self.model.hyperparams, self.hyperparams)
 
-    def test_paramsname(self):
+    def test_paramsname(self) -> None:
         """Test .params name"""
         self.assertEqual(
             self.model.paramsname,
             f"{SHORT_NAME}_{json.dumps(self.hyperparams)}",
         )
 
-    def test_name(self):
+    def test_name(self) -> None:
         """Test .name"""
         self.assertEqual(self.model.name, NAME)
 
-    def test_short_name(self):
+    def test_short_name(self) -> None:
         """Test .short_name"""
         self.assertEqual(self.model.short_name, SHORT_NAME)
 
-    def test_path(self):
+    def test_path(self) -> None:
         """Test .path"""
         self.assertEqual(
             self.model.path,
@@ -63,11 +63,11 @@ class TestShiftedStochasticGradientDescentRegressorBasic(unittest.TestCase):
             + f"{SHORT_NAME}_{json.dumps(self.hyperparams)}",
         )
 
-    def test_load_model_error(self):
+    def test_load_model_error(self) -> None:
         """Test .load_model"""
         self.assertRaises(FileNotFoundError, self.model.load_model)
 
-    def test_generate_model(self):
+    def test_generate_model(self) -> None:
         """Test .generate_model"""
         self.model.generate_model(self.feat, self.out)
         self.assertIsNotNone(self.model.model)
@@ -76,7 +76,7 @@ class TestShiftedStochasticGradientDescentRegressorBasic(unittest.TestCase):
 class TestShiftedStochasticGradientDescentRegressorModel(unittest.TestCase):
     """Tests for ShiftedStochasticGradientDescentRegressor (Model generated)"""
 
-    def setUp(self):
+    def setUp(self) -> None:
         num_features = 72
         os.makedirs("tests/results/models")
         os.makedirs("tests/results/hyperparameters")
@@ -96,16 +96,16 @@ class TestShiftedStochasticGradientDescentRegressorModel(unittest.TestCase):
             self.out.iloc[: math.ceil(self.out.shape[0] / 2)],
         )
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         shutil.rmtree("tests/results")
 
-    def test_clear_model(self):
+    def test_clear_model(self) -> None:
         """test .clear_model"""
         self.model.clear_model()
         with self.assertRaises(FileNotFoundError):
             print(self.model.model is not None)
 
-    def test_save_model(self):
+    def test_save_model(self) -> None:
         """test .save_model"""
         model_path = (
             "tests/results/models/"
@@ -114,45 +114,53 @@ class TestShiftedStochasticGradientDescentRegressorModel(unittest.TestCase):
         self.model.save_model()
         self.assertTrue(os.path.exists(model_path))
 
-    def test_load_model_error(self):
+    def test_load_model_error(self) -> None:
         """Test .load_model"""
         self.model.save_model()
         self.model.clear_model()
         self.assertIsNotNone(self.model.model)
 
-    def test_make_predictions(self):
+    def test_make_predictions(self) -> None:
         """Test .make_predictions"""
         # Init
-        # expected_deltas = {
-        #     "col73": [np.inf, np.inf],
-        #     "col74": [np.inf, np.inf],
-        #     "col75": [np.inf, np.inf],
-        #     "col76": [np.inf, np.inf],
-        #     "col77": [np.inf, np.inf],
-        #     "col78": [np.inf, np.inf],
-        # }
+        expected_deltas = {
+            "col73": [np.inf, np.inf],
+            "col74": [np.inf, np.inf],
+            "col75": [np.inf, np.inf],
+            "col76": [np.inf, np.inf],
+            "col77": [np.inf, np.inf],
+            "col78": [np.inf, np.inf],
+        }
         index = self.feat.shape[0] - 2
         feat = self.feat.iloc[index:].reset_index(drop=True)
         out = self.out[index:].reset_index(drop=True)
         # Execute
-        self.assertRaises(ValueError, self.model.make_predictions, feat, out)
-        # dtf = self.model.make_predictions(feat, out)
+        # self.assertRaises(ValueError, self.model.make_predictions, feat, out)
+        dtf = self.model.make_predictions(feat, out)
         # Evaluate
-        # for col in dtf.columns[2:]:
-        #     for i, value in enumerate(dtf[col]):
-        #         self.assertAlmostEqual(
-        #             value, out[col][i], delta=expected_deltas[col][i]
-        #        )
+        for col in dtf.columns[2:]:
+            for i, value in enumerate(dtf[col]):
+                self.assertAlmostEqual(
+                    value, out[col][i], delta=expected_deltas[col][i]
+                )
 
-    def test_calculate_errors(self):
+    def test_calculate_errors(self) -> None:
         """test calculate_errors"""
         # Init
         median_value = np.nanmean(self.feat.iloc[:, 2:])
         # Execute
         index = self.feat.shape[0] - 2
-        self.assertRaises(
-            ValueError,
-            self.model.calculate_errors,
+        # self.assertRaises(
+        #    ValueError,
+        #    self.model.calculate_errors,
+        #    (
+        #        self.feat.iloc[index:].reset_index(drop=True),
+        #        self.out[index:].reset_index(drop=True),
+        #    ),
+        #    ErrorType.MAPE2,
+        #    median_value,
+        # )
+        errors = self.model.calculate_errors(
             (
                 self.feat.iloc[index:].reset_index(drop=True),
                 self.out[index:].reset_index(drop=True),
@@ -160,33 +168,25 @@ class TestShiftedStochasticGradientDescentRegressorModel(unittest.TestCase):
             ErrorType.MAPE2,
             median_value,
         )
-        # errors = self.model.calculate_errors(
-        #     (
-        #         self.feat.iloc[index:].reset_index(drop=True),
-        #         self.out[index:].reset_index(drop=True),
-        #     ),
-        #     ErrorType.MAPE2,
-        #     median_value,
-        # )
         # Validate
-        # for col in errors.columns:
-        #     for value in errors[col]:
-        #         self.assertGreaterEqual(value, 0.0)
-        #         self.assertGreaterEqual(value, 1000000000000)
-        # self.assertTrue(os.path.exists(
-        #     "tests/results/errors/raw/" +
-        #     f"{ErrorType.MAPE2.name}_{SHORT_NAME}_" +
-        #     f"{json.dumps(self.hyperparams)}.csv.gz"
-        # ))
-        # self.assertTrue(os.path.exists(
-        #     "tests/results/errors/sum/" +
-        #     f"{SHORT_NAME}_{json.dumps(self.hyperparams)}.csv.gz"
-        # ))
+        for col in errors.columns:
+            for value in errors[col]:
+                self.assertGreaterEqual(value, 0.0)
+                self.assertGreaterEqual(value, 100000000000)
+        self.assertTrue(os.path.exists(
+            "tests/results/errors/raw/" +
+            f"{ErrorType.MAPE2.name}_{SHORT_NAME}_" +
+            f"{json.dumps(self.hyperparams)}.csv.gz"
+        ))
+        self.assertTrue(os.path.exists(
+            "tests/results/errors/sum/" +
+            f"{SHORT_NAME}_{json.dumps(self.hyperparams)}.csv.gz"
+        ))
 
-    def test_calculate_errors_per_file(self):
+    def test_calculate_errors_per_file(self) -> None:
         """test calculate_errors_per_file"""
         # Init
-        median_value = np.nanmean(self.feat.iloc[:, 2:])
+        # median_value = np.nanmean(self.feat.iloc[:, 2:])
         index1 = self.feat.shape[0] - 4
         index2 = self.feat.shape[0] - 2
         # - Save features dtf 1

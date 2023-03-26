@@ -60,4 +60,5 @@ def check_phase1_is_generated(
 
 def move_models_to_phase2(fforma_path: str, training_path: str) -> None:
     """Move models to phase2 folder"""
-    utils.copy_models(training_path, fforma_path)
+    dest_path = os.path.join(fforma_path, "phase1")
+    utils.copy_models(training_path, dest_path)

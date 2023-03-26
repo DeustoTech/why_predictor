@@ -11,12 +11,12 @@ from why_predictor import training
 class TestFriedmanTests(unittest.TestCase):
     """Tests for errors module"""
 
-    def setUp(self):
+    def setUp(self) -> None:
         os.makedirs("tests/results/errors/sum")
         os.makedirs("tests/results/errors/raw")
         os.makedirs("tests/results/post-hoc")
 
-    def test_friedman_test_with_post_hoc_complete(self):
+    def test_friedman_test_with_post_hoc_complete(self) -> None:
         """Test training.friedman_test_with_post_hoc (complete)"""
         # Init
         values = {

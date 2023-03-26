@@ -13,15 +13,15 @@ from why_predictor.phases import phase2
 class TestPhase2FunctionsClass(unittest.TestCase):
     """tests phase 2"""
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.base_path = "tests/results"
         os.makedirs(self.base_path)
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         shutil.rmtree(self.base_path, ignore_errors=True)
 
     @patch("why_predictor.config.TRAINING_PATH", "tests/results")
-    def test_delete_previous_execution(self):
+    def test_delete_previous_execution(self) -> None:
         """test delete_previous_execution"""
         os.makedirs(self.base_path, exist_ok=True)
         self.assertTrue(os.path.exists(self.base_path))
@@ -30,7 +30,7 @@ class TestPhase2FunctionsClass(unittest.TestCase):
 
     @patch("why_predictor.config.NUM_FEATURES", 66)
     @patch("why_predictor.config.NUM_PREDICTIONS", 4)
-    def test_generate_phase2_tree(self):
+    def test_generate_phase2_tree(self) -> None:
         """test generate_phase2_tree"""
         num_features = 66
         num_predictions = 4
@@ -107,7 +107,7 @@ class TestPhase2FunctionsClass(unittest.TestCase):
         self.assertEqual(len(df_test_features), 0)
         self.assertEqual(len(df_test_output), 0)
 
-    def test_move_models_to_phase2(self):
+    def test_move_models_to_phase2(self) -> None:
         """test phase2.move_models_to_phase2"""
         # Init
         os.makedirs(os.path.join(self.base_path, "phase1", "models"))

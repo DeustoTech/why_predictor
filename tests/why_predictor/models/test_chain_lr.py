@@ -3,8 +3,9 @@ import json
 import os
 import shutil
 import unittest
+from typing import Any, Dict
 
-import numpy as np  # type: ignore
+import numpy as np
 import pandas as pd  # type: ignore
 from pandas.testing import assert_frame_equal  # type: ignore
 
@@ -18,7 +19,7 @@ SHORT_NAME = "CHAIN_LR"
 class TestChainedLinearRegressorBasic(unittest.TestCase):
     """Tests for ChainedLinearRegressor (Basic info)"""
 
-    def setUp(self):
+    def setUp(self) -> None:
         num_features = 72
         os.makedirs("tests/results/models")
         os.makedirs("tests/results/hyperparameters")
@@ -28,34 +29,34 @@ class TestChainedLinearRegressorBasic(unittest.TestCase):
         dtf = pd.read_csv("tests/data/rolling.csv.gz")
         self.feat = dtf.iloc[:, : num_features + 2]
         self.out = dtf.drop(dtf.iloc[:, 2 : num_features + 2], axis=1)
-        self.hyperparams = {}
+        self.hyperparams: Dict[str, Any] = {}
         self.model = lr.ChainedLinearRegressor(
             self.hyperparams, "tests/results"
         )
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         shutil.rmtree("tests/results")
 
-    def test_hyperparams(self):
+    def test_hyperparams(self) -> None:
         """Test .hyperparams"""
         self.assertEqual(self.model.hyperparams, self.hyperparams)
 
-    def test_paramsname(self):
+    def test_paramsname(self) -> None:
         """Test .params name"""
         self.assertEqual(
             self.model.paramsname,
             f"{SHORT_NAME}_{json.dumps(self.hyperparams)}",
         )
 
-    def test_name(self):
+    def test_name(self) -> None:
         """Test .name"""
         self.assertEqual(self.model.name, NAME)
 
-    def test_short_name(self):
+    def test_short_name(self) -> None:
         """Test .short_name"""
         self.assertEqual(self.model.short_name, SHORT_NAME)
 
-    def test_path(self):
+    def test_path(self) -> None:
         """Test .path"""
         self.assertEqual(
             self.model.path,
@@ -63,11 +64,11 @@ class TestChainedLinearRegressorBasic(unittest.TestCase):
             + f"{SHORT_NAME}_{json.dumps(self.hyperparams)}",
         )
 
-    def test_load_model_error(self):
+    def test_load_model_error(self) -> None:
         """Test .load_model"""
         self.assertRaises(FileNotFoundError, self.model.load_model)
 
-    def test_generate_model(self):
+    def test_generate_model(self) -> None:
         """Test .generate_model"""
         self.model.generate_model(self.feat, self.out)
         self.assertIsNotNone(self.model.model)
@@ -76,7 +77,7 @@ class TestChainedLinearRegressorBasic(unittest.TestCase):
 class TestChainedLinearRegressorModel(unittest.TestCase):
     """Tests for ChainedLinearRegressor (Model generated)"""
 
-    def setUp(self):
+    def setUp(self) -> None:
         num_features = 72
         os.makedirs("tests/results/models")
         os.makedirs("tests/results/hyperparameters")
@@ -86,23 +87,23 @@ class TestChainedLinearRegressorModel(unittest.TestCase):
         dtf = pd.read_csv("tests/data/rolling.csv.gz")
         self.feat = dtf.iloc[:, : num_features + 2]
         self.out = dtf.drop(dtf.iloc[:, 2 : num_features + 2], axis=1)
-        self.hyperparams = {}
+        self.hyperparams: Dict[str, Any] = {}
         self.model = lr.ChainedLinearRegressor(
             self.hyperparams, "tests/results"
         )
         # We train the model with first 50 samples
         self.model.generate_model(self.feat.iloc[:50], self.out.iloc[:50])
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         shutil.rmtree("tests/results")
 
-    def test_clear_model(self):
+    def test_clear_model(self) -> None:
         """test .clear_model"""
         self.model.clear_model()
         with self.assertRaises(FileNotFoundError):
             print(self.model.model is not None)
 
-    def test_save_model(self):
+    def test_save_model(self) -> None:
         """test .save_model"""
         model_path = (
             "tests/results/models/"
@@ -111,13 +112,13 @@ class TestChainedLinearRegressorModel(unittest.TestCase):
         self.model.save_model()
         self.assertTrue(os.path.exists(model_path))
 
-    def test_load_model_error(self):
+    def test_load_model_error(self) -> None:
         """Test .load_model"""
         self.model.save_model()
         self.model.clear_model()
         self.assertIsNotNone(self.model.model)
 
-    def test_make_predictions_error0(self):
+    def test_make_predictions_error0(self) -> None:
         """Test .make_predictions"""
         # Init
         expected_df = pd.DataFrame(
@@ -139,7 +140,7 @@ class TestChainedLinearRegressorModel(unittest.TestCase):
         # Evaluate
         assert_frame_equal(dtf, expected_df)
 
-    def test_calculate_errors_error0(self):
+    def test_calculate_errors_error0(self) -> None:
         """test calculate_errors"""
         # Init
         median_value = np.nanmean(self.feat.iloc[:, 2:])
@@ -173,7 +174,7 @@ class TestChainedLinearRegressorModel(unittest.TestCase):
             )
         )
 
-    def test_make_predictions(self):
+    def test_make_predictions(self) -> None:
         """Test .make_predictions"""
         # Init
         expected_df = pd.DataFrame(
@@ -197,7 +198,7 @@ class TestChainedLinearRegressorModel(unittest.TestCase):
         # Evaluate
         assert_frame_equal(dtf, expected_df)
 
-    def test_calculate_errors(self):
+    def test_calculate_errors(self) -> None:
         """test calculate_errors"""
         # Init
         median_value = np.nanmean(self.feat.iloc[:, 2:])
@@ -237,7 +238,7 @@ class TestChainedLinearRegressorModel(unittest.TestCase):
             )
         )
 
-    def test_calculate_errors_per_file(self):
+    def test_calculate_errors_per_file(self) -> None:
         """test calculate_errors_per_file"""
         # Init
         median_value = np.nanmean(self.feat.iloc[:, 2:])

@@ -4,7 +4,7 @@ import shutil
 import unittest
 from unittest.mock import patch
 
-import numpy as np  # type: ignore
+import numpy as np
 import pandas as pd  # type: ignore
 
 from why_predictor import loading
@@ -13,7 +13,7 @@ from why_predictor import loading
 class LoadingFunctionsTest(unittest.TestCase):
     """loading functions test"""
 
-    def setUp(self):
+    def setUp(self) -> None:
         # Init
         root_path = "tests/results"
         shutil.rmtree(root_path, ignore_errors=True)
@@ -28,11 +28,11 @@ class LoadingFunctionsTest(unittest.TestCase):
         os.makedirs(os.path.join(root_path, "cache/72x6/test1"))
         self.root_path = root_path
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         shutil.rmtree(self.root_path)
 
     @patch("why_predictor.config.DATASET_CACHE", "tests/results/cache")
-    def test_process_and_save(self):
+    def test_process_and_save(self) -> None:
         """test process and save"""
         # Init
         cache_name = os.path.join(
@@ -44,7 +44,7 @@ class LoadingFunctionsTest(unittest.TestCase):
         # Validate
         self.assertTrue(os.path.exists(cache_name))
 
-    def test_load_datasets(self):
+    def test_load_datasets(self) -> None:
         """test load_datasets"""
         # Init
         num_features = 72

@@ -10,6 +10,7 @@ import pandas as pd  # type: ignore
 
 from why_predictor.errors import ErrorType
 from why_predictor.models import ModelGroups
+from why_predictor.models.model_group import BasicModelGroup
 
 
 def generate_dirs_and_files_for_testing() -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -89,31 +90,32 @@ def generate_dirs_and_files_for_testing() -> Tuple[pd.DataFrame, pd.DataFrame]:
 class TestSGDModelGroup(unittest.TestCase):
     """Base tests for SGD ModelGroup."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.model_name = "SGD"
         self.combinations = 3
         self.base_path = "tests/results"
         self.feat, self.out = generate_dirs_and_files_for_testing()
-        self.group = None
+        self.group: BasicModelGroup
 
-    def _set_up(self):
+    def _set_up(self) -> BasicModelGroup:
         """just common code to set up the tests"""
-        self.group = ModelGroups[self.model_name].value(
+        group: BasicModelGroup = ModelGroups[self.model_name].value(
             self.model_name,
             (self.feat.iloc[:50], self.out.iloc[:50]),
             ErrorType.MAPE2,
             self.base_path,
         )
+        return group
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         shutil.rmtree(self.base_path)
 
-    def _test_create_group(self):
+    def _test_create_group(self) -> None:
         """test create object"""
         # Evaluate
         self.assertEqual(len(self.group.hyper_params), self.combinations)
 
-    def _test_fit(self):
+    def _test_fit(self) -> None:
         """test fit hyperparams"""
         # Init
         index = self.feat.shape[0] - 4
@@ -125,14 +127,14 @@ class TestSGDModelGroup(unittest.TestCase):
         # Validate
         self.__validate_fit()
 
-    def _test_fit_from_files(self):
+    def _test_fit_from_files(self) -> None:
         """test fit hyperparams from files"""
         # Execute
         self.group.fit_from_files()
         # Validate
         self.__validate_fit()
 
-    def __validate_fit(self):
+    def __validate_fit(self) -> None:
         # Validate
         # - hyperparams error files
         self.assertEqual(
@@ -165,20 +167,20 @@ class TestSGDModelGroup(unittest.TestCase):
 class TestMultiSGDModelGroup(TestSGDModelGroup):
     """Tests for Multi_SGD ModelGroup."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         super().setUp()
         self.model_name = "MULTI_SGD"
-        self._set_up()
+        self.group = self._set_up()
 
-    def test_create_group(self):
+    def test_create_group(self) -> None:
         """test create object"""
         self._test_create_group()
 
-    def test_fit(self):
+    def test_fit(self) -> None:
         """test fit hyperparams"""
         self._test_fit()
 
-    def test_fit_from_files(self):
+    def test_fit_from_files(self) -> None:
         """test fit hyperparams from files"""
         self._test_fit_from_files()
 
@@ -186,20 +188,20 @@ class TestMultiSGDModelGroup(TestSGDModelGroup):
 class TestChainSGDModelGroup(TestSGDModelGroup):
     """Tests for Chain_SGD ModelGroup."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         super().setUp()
         self.model_name = "CHAIN_SGD"
-        self._set_up()
+        self.group = self._set_up()
 
-    def test_create_group(self):
+    def test_create_group(self) -> None:
         """test create object"""
         self._test_create_group()
 
-    def test_fit(self):
+    def test_fit(self) -> None:
         """test fit hyperparams"""
         self._test_fit()
 
-    def test_fit_from_files(self):
+    def test_fit_from_files(self) -> None:
         """test fit hyperparams from files"""
         self._test_fit_from_files()
 
@@ -207,19 +209,19 @@ class TestChainSGDModelGroup(TestSGDModelGroup):
 # class TestShiftSGDModelGroup(TestSGDModelGroup):
 #    """Tests for Shift_SGD ModelGroup."""
 #
-#    def setUp(self):
+#    def setUp(self) -> None:
 #        super().setUp()
 #        self.model_name = "SHIFT_SGD"
-#        self._set_up()
+#        self.group = self._set_up()
 #
-#    def test_create_group(self):
+#    def test_create_group(self) -> None:
 #        """test create object"""
 #        self._test_create_group()
 #
-#    def test_fit(self):
+#    def test_fit(self) -> None:
 #        """test fit hyperparams"""
 #        self._test_fit()
 #
-#    def test_fit_from_files(self):
+#    def test_fit_from_files(self) -> None:
 #        """test fit hyperparams from files"""
 #        self._test_fit_from_files()

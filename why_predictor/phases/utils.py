@@ -10,7 +10,8 @@ from .. import loading
 def copy_models(origin_path: str, new_path: str) -> None:
     """Copy models from one phase to another"""
     hyperparams_path = os.path.join(origin_path, "hyperparameters")
-    new_models_path = os.path.join(new_path, "phase2", "models")
+    # new_models_path = os.path.join(new_path, "phase2", "models")
+    new_models_path = os.path.join(new_path, "models")
     for model_path in glob.glob(os.path.join(hyperparams_path, "*")):
         filename = os.path.split(model_path)[-1]
         name = os.path.splitext(filename)[0]
@@ -23,5 +24,7 @@ def copy_models(origin_path: str, new_path: str) -> None:
         shutil.copy(original_path, new_models_path)
         # Copy hyperparameters file
         shutil.copy(
-            model_path, os.path.join(new_path, "phase2", "hyperparameters")
+            # model_path, os.path.join(new_path, "phase2", "hyperparameters")
+            model_path,
+            os.path.join(new_path, "hyperparameters"),
         )

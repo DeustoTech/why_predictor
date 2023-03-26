@@ -3,9 +3,10 @@ import os
 import random
 import shutil
 import unittest
+from typing import Any
 from unittest.mock import patch
 
-import numpy as np  # type: ignore
+import numpy as np
 import pandas as pd  # type: ignore
 
 from why_predictor import loading
@@ -66,15 +67,15 @@ CONTEXT_COLUMNS = [
 class LoadingFFORMAFunctionsTest(unittest.TestCase):
     """loading.fforma functions test"""
 
-    def setUp(self):
+    def setUp(self) -> None:
         os.makedirs("tests/results/errors/raw")
         os.makedirs("tests/results/errors/sum")
         os.makedirs("tests/results/predictions")
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         shutil.rmtree("tests/results")
 
-    def test_load_context(self):
+    def test_load_context(self) -> None:
         """test loading.fforma.load_context"""
         context = loading.fforma.load_context("tests/data")
         self.assertEqual(context.shape, (81, 48))
@@ -84,7 +85,7 @@ class LoadingFFORMAFunctionsTest(unittest.TestCase):
         "why_predictor.loading.fforma.load_context",
         return_value=loading.fforma.load_context("tests/data"),
     )
-    def test_generate_fforma_features(self, _):
+    def test_generate_fforma_features(self, _: Any) -> None:
         """test loading.fforma.generate_fforma_features"""
         # Init
         dtf = pd.read_csv("tests/data/dataset.csv.gz")
@@ -97,7 +98,7 @@ class LoadingFFORMAFunctionsTest(unittest.TestCase):
             ["dataset", "timeseries", *CONTEXT_COLUMNS],
         )
 
-    def test_generate_fforma_output(self):
+    def test_generate_fforma_output(self) -> None:
         """test loading.fforma.generate_fforma_output"""
         # Init
         shutil.copytree("tests/data/models", "tests/results/models")
@@ -127,7 +128,7 @@ class LoadingFFORMAFunctionsTest(unittest.TestCase):
             ["dataset", "timeseries", "SHIFT_LR", "SHIFT_SVR"],
         )
 
-    def test_clean_bad_models(self):
+    def test_clean_bad_models(self) -> None:
         """test loading.fforma.clean_bad_models"""
         # Init
         fforma_out = pd.DataFrame(
@@ -157,7 +158,7 @@ class LoadingFFORMAFunctionsTest(unittest.TestCase):
 class LoadingFFORMASplitFunctionsTest(unittest.TestCase):
     """loading.fforma split functions test"""
 
-    def setUp(self):
+    def setUp(self) -> None:
         os.makedirs("tests/results")
         datasets = [2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4]
         series = [1, 2, 3, 1, 2, 3, 4, 1, 2, 3, 4, 5]
@@ -180,10 +181,10 @@ class LoadingFFORMASplitFunctionsTest(unittest.TestCase):
             }
         )
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         shutil.rmtree("tests/results")
 
-    def test_split_fforma_in_train_test_ratio0(self):
+    def test_split_fforma_in_train_test_ratio0(self) -> None:
         """test loading.fforma.split_fforma_in_train_test (ratio 0%)"""
         # Execute
         train_feat, train_out = loading.fforma.split_fforma_in_train_test(
@@ -201,7 +202,7 @@ class LoadingFFORMASplitFunctionsTest(unittest.TestCase):
             self.fforma_out.shape,
         )
 
-    def test_split_fforma_in_train_test_ratio25(self):
+    def test_split_fforma_in_train_test_ratio25(self) -> None:
         """test loading.fforma.split_fforma_in_train_test (ratio 25%)"""
         # Execute
         train_feat, train_out = loading.fforma.split_fforma_in_train_test(
@@ -219,7 +220,7 @@ class LoadingFFORMASplitFunctionsTest(unittest.TestCase):
             (8, 6),
         )
 
-    def test_split_fforma_in_train_test_ratio50(self):
+    def test_split_fforma_in_train_test_ratio50(self) -> None:
         """test loading.fforma.split_fforma_in_train_test (ratio 50%)"""
         # Execute
         train_feat, train_out = loading.fforma.split_fforma_in_train_test(
@@ -237,7 +238,7 @@ class LoadingFFORMASplitFunctionsTest(unittest.TestCase):
             (5, 6),
         )
 
-    def test_split_fforma_in_train_test_ratio75(self):
+    def test_split_fforma_in_train_test_ratio75(self) -> None:
         """test loading.fforma.split_fforma_in_train_test (ratio 75%)"""
         # Execute
         train_feat, train_out = loading.fforma.split_fforma_in_train_test(
@@ -255,7 +256,7 @@ class LoadingFFORMASplitFunctionsTest(unittest.TestCase):
             (2, 6),
         )
 
-    def test_split_fforma_in_train_test_ratio100(self):
+    def test_split_fforma_in_train_test_ratio100(self) -> None:
         """test loading.fforma.split_fforma_in_train_test (ratio 100%)"""
         # Execute
         train_feat, train_out = loading.fforma.split_fforma_in_train_test(

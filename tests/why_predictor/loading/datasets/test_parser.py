@@ -4,9 +4,10 @@ import os
 import shutil
 import unittest
 from datetime import datetime
+from typing import Tuple
 from unittest.mock import patch
 
-import numpy as np  # type: ignore
+import numpy as np
 import pandas as pd  # type: ignore
 from parameterized import parameterized  # type: ignore
 
@@ -14,19 +15,21 @@ import why_predictor.panda_utils as pdu
 from why_predictor import loading
 
 
-def _read_csv(filename: str = "tests/data/test1/imp_csv/001.csv.gz"):
+def _read_csv(
+    filename: str = "tests/data/test1/imp_csv/001.csv.gz",
+) -> pd.DataFrame:
     return pd.read_csv(filename, usecols=["timestamp", "kWh"])
 
 
 class DataFrameLoadingParserTest(unittest.TestCase):
     """loading.dataset.parser test"""
 
-    def setUp(self):
+    def setUp(self) -> None:
         pass
 
-    def test_get_dataset_timeseries_name(self):
+    def test_get_dataset_timeseries_name(self) -> None:
         """get_dataset_timeseries_name test"""
-        names = ["test1", "tests/data/test1/imp_csv/001.csv.gz"]
+        names = ("test1", "tests/data/test1/imp_csv/001.csv.gz")
         (
             filename,
             dataset,
@@ -36,7 +39,7 @@ class DataFrameLoadingParserTest(unittest.TestCase):
         self.assertEqual(dataset, "test1")
         self.assertEqual(timeseries, "001")
 
-    def test_process_raw_dataframe(self):
+    def test_process_raw_dataframe(self) -> None:
         """test process_raw_dataframe"""
         result = loading.datasets.parser.process_raw_dataframe(_read_csv())
         self.assertEqual(result.iloc[0, 0], datetime(2008, 5, 14, 1))
@@ -46,15 +49,15 @@ class DataFrameLoadingParserTest(unittest.TestCase):
         self.assertEqual(result.timestamp.dtype, np.dtype("<M8[ns]"))
         self.assertEqual(result.kWh.dtype, np.uint16)
 
-    def test_process_raw_dataframe_max_power(self):
+    def test_process_raw_dataframe_max_power(self) -> None:
         """test process_raw_dataframe with value with max power exceeded"""
         dtf = _read_csv("tests/data/maxpower.csv.gz")
         self.assertRaises(
             ValueError, loading.datasets.parser.process_raw_dataframe, dtf
         )
 
-    @parameterized.expand([(78,), (66,)])
-    def test_generate_rolling_window_values(self, window):
+    @parameterized.expand([(78,), (66,)])  # type: ignore
+    def test_generate_rolling_window_values(self, window: int) -> None:
         """test generate_rolling_windows"""
         raw = loading.datasets.parser.process_raw_dataframe(_read_csv())
         dtf = loading.datasets.parser.generate_rolling_windows(
@@ -77,10 +80,10 @@ class DataFrameLoadingParserTest(unittest.TestCase):
             (0.8, 15774, 3943),
             (1, 19717, 0),
         ]
-    )
+    )  # type: ignore
     def test_split_rolling_window_dtf_in_train_and_test(
-        self, ratio, expected_train_len, expected_test_len
-    ):
+        self, ratio: float, expected_train_len: int, expected_test_len: int
+    ) -> None:
         """test split_rolling_window_dtf_in_train_and_test"""
         num = 78
         dtf = pdu.read_csv("tests/data/rolling.csv.gz")
@@ -104,7 +107,7 @@ class DataFrameLoadingParserTest(unittest.TestCase):
 class DataFrameLoadingParserTestToDisk(unittest.TestCase):
     """load_set.loading.datasets.parser test"""
 
-    def setUp(self):
+    def setUp(self) -> None:
         # Init
         self.dtf = pdu.read_csv("tests/data/rolling.csv.gz")
         shutil.rmtree("tests/results", ignore_errors=True)
@@ -119,12 +122,14 @@ class DataFrameLoadingParserTestToDisk(unittest.TestCase):
                     os.makedirs(folder_path)
         self.root_path = root_path
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         # Clean
         shutil.rmtree(self.root_path)
 
-    @parameterized.expand([([72, 6],), ([66, 12],)])
-    def test_process_dataset_into_features_and_output(self, window):
+    @parameterized.expand([([72, 6],), ([66, 12],)])  # type: ignore
+    def test_process_dataset_into_features_and_output(
+        self, window: Tuple[int, int]
+    ) -> None:
         """test process_dataset_into_features_and_output"""
         base_path = os.path.join(self.root_path, "datasets/test/mydataset")
         # Execute function
@@ -144,7 +149,9 @@ class DataFrameLoadingParserTestToDisk(unittest.TestCase):
 
     @patch("why_predictor.config.SAVE_DATASETS", True)
     @patch("why_predictor.config.DATASET_CACHE", "tests/results/cache")
-    def test_save_rolling_window_dataframe_when_save_datasets_is_true(self):
+    def test_save_rolling_window_dataframe_when_save_datasets_is_true(
+        self,
+    ) -> None:
         """test save_rolling_window_dataframe (SAVE_DATASETS=True)"""
         # Init
         num_features = 72
@@ -165,7 +172,9 @@ class DataFrameLoadingParserTestToDisk(unittest.TestCase):
 
     @patch("why_predictor.config.SAVE_DATASETS", False)
     @patch("why_predictor.config.DATASET_CACHE", "tests/results/cache")
-    def test_save_rolling_window_dataframe_when_save_datasets_is_false(self):
+    def test_save_rolling_window_dataframe_when_save_datasets_is_false(
+        self,
+    ) -> None:
         """test save_rolling_window_dataframe (SAVE_DATASETS=False)"""
         # Init
         num_features = 72
@@ -184,7 +193,7 @@ class DataFrameLoadingParserTestToDisk(unittest.TestCase):
         # Validate
         self.assertFalse(os.path.exists(cache_name))
 
-    def test_concat_csvs_in_file(self):
+    def test_concat_csvs_in_file(self) -> None:
         """test concat_csvs_in_file"""
         logging.getLogger("logger").disabled = True
         # Copy dataset-timeseries 1
@@ -195,7 +204,8 @@ class DataFrameLoadingParserTestToDisk(unittest.TestCase):
         )
         shutil.copy(
             "tests/data/rolling.csv.gz",
-            "tests/results/datasets/train/mydataset/output/mytimeseries.csv.gz",
+            "tests/results/datasets/train/mydataset/"
+            + "output/mytimeseries.csv.gz",
         )
         shutil.copy(
             "tests/data/rolling.csv.gz",
@@ -209,7 +219,8 @@ class DataFrameLoadingParserTestToDisk(unittest.TestCase):
         # Copy dataset-timeseries 2
         shutil.copy(
             "tests/data/rolling2.csv.gz",
-            "tests/results/datasets/train/dataset2/features/timeseries1.csv.gz",
+            "tests/results/datasets/train/dataset2/"
+            + "features/timeseries1.csv.gz",
         )
         shutil.copy(
             "tests/data/rolling2.csv.gz",

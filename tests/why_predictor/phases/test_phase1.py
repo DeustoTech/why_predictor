@@ -12,16 +12,16 @@ from why_predictor.phases import phase1
 class TestPhase1Functions(unittest.TestCase):
     """tests phase 1"""
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.base_path = "tests/results"
         os.makedirs(self.base_path)
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         if os.path.exists(self.base_path):
             shutil.rmtree(self.base_path)
 
     @patch("why_predictor.config.TRAINING_PATH", "tests/results")
-    def test_delete_previous_execution(self):
+    def test_delete_previous_execution(self) -> None:
         """test delete_previous_execution"""
         os.makedirs(self.base_path, exist_ok=True)
         self.assertTrue(os.path.exists(self.base_path))
@@ -30,7 +30,7 @@ class TestPhase1Functions(unittest.TestCase):
 
     @patch("why_predictor.config.NUM_FEATURES", 66)
     @patch("why_predictor.config.NUM_PREDICTIONS", 4)
-    def test_generate_phase1_tree(self):
+    def test_generate_phase1_tree(self) -> None:
         """test generate_phase1_tree"""
         num_features = 66
         num_predictions = 4

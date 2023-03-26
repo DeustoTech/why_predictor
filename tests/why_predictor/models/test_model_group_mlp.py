@@ -10,6 +10,7 @@ import pandas as pd  # type: ignore
 
 from why_predictor.errors import ErrorType
 from why_predictor.models import ModelGroups
+from why_predictor.models.model_group import BasicModelGroup
 
 
 def generate_dirs_and_files_for_testing() -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -89,31 +90,32 @@ def generate_dirs_and_files_for_testing() -> Tuple[pd.DataFrame, pd.DataFrame]:
 class TestMLPModelGroup(unittest.TestCase):
     """Base tests for MLP ModelGroup."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.model_name = "MLP"
         self.combinations = 3
         self.base_path = "tests/results"
         self.feat, self.out = generate_dirs_and_files_for_testing()
-        self.group = None
+        self.group: BasicModelGroup
 
-    def _set_up(self):
+    def _set_up(self) -> BasicModelGroup:
         """just common code to set up the tests"""
-        self.group = ModelGroups[self.model_name].value(
+        group: BasicModelGroup = ModelGroups[self.model_name].value(
             self.model_name,
             (self.feat.iloc[:50], self.out.iloc[:50]),
             ErrorType.MAPE2,
             self.base_path,
         )
+        return group
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         shutil.rmtree(self.base_path)
 
-    def _test_create_group(self):
+    def _test_create_group(self) -> None:
         """test create object"""
         # Evaluate
         self.assertEqual(len(self.group.hyper_params), self.combinations)
 
-    def _test_fit(self, error_value):
+    def _test_fit(self, error_value: float) -> None:
         """test fit hyperparams"""
         # Init
         index = self.feat.shape[0] - 4
@@ -125,14 +127,14 @@ class TestMLPModelGroup(unittest.TestCase):
         # Validate
         self.__validate_fit(error_value)
 
-    def _test_fit_from_files(self, error_value):
+    def _test_fit_from_files(self, error_value: float) -> None:
         """test fit hyperparams from files"""
         # Execute
         self.group.fit_from_files()
         # Validate
         self.__validate_fit(error_value)
 
-    def __validate_fit(self, error_value):
+    def __validate_fit(self, error_value: float) -> None:
         # Validate
         # - hyperparams error files
         self.assertEqual(
@@ -166,20 +168,20 @@ class TestMLPModelGroup(unittest.TestCase):
 class TestMultiMLPModelGroup(TestMLPModelGroup):
     """Tests for Multi_MLP ModelGroup."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         super().setUp()
         self.model_name = "MULTI_MLP"
-        self._set_up()
+        self.group = self._set_up()
 
-    def test_create_group(self):
+    def test_create_group(self) -> None:
         """test create object"""
         self._test_create_group()
 
-    def test_fit(self):
+    def test_fit(self) -> None:
         """test fit hyperparams"""
         self._test_fit(0.33221134543418884)
 
-    def test_fit_from_files(self):
+    def test_fit_from_files(self) -> None:
         """test fit hyperparams from files"""
         self._test_fit_from_files(0.33221134543418884)
 
@@ -187,20 +189,20 @@ class TestMultiMLPModelGroup(TestMLPModelGroup):
 class TestChainMLPModelGroup(TestMLPModelGroup):
     """Tests for Chain_MLP ModelGroup."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         super().setUp()
         self.model_name = "CHAIN_MLP"
-        self._set_up()
+        self.group = self._set_up()
 
-    def test_create_group(self):
+    def test_create_group(self) -> None:
         """test create object"""
         self._test_create_group()
 
-    def test_fit(self):
+    def test_fit(self) -> None:
         """test fit hyperparams"""
         self._test_fit(0.4065755009651184)
 
-    def test_fit_from_files(self):
+    def test_fit_from_files(self) -> None:
         """test fit hyperparams from files"""
         self._test_fit_from_files(0.4065755009651184)
 
@@ -208,19 +210,19 @@ class TestChainMLPModelGroup(TestMLPModelGroup):
 class TestShiftMLPModelGroup(TestMLPModelGroup):
     """Tests for Shift_MLP ModelGroup."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         super().setUp()
         self.model_name = "SHIFT_MLP"
-        self._set_up()
+        self.group = self._set_up()
 
-    def test_create_group(self):
+    def test_create_group(self) -> None:
         """test create object"""
         self._test_create_group()
 
-    def test_fit(self):
+    def test_fit(self) -> None:
         """test fit hyperparams"""
         self._test_fit(0.4067666232585907)
 
-    def test_fit_from_files(self):
+    def test_fit_from_files(self) -> None:
         """test fit hyperparams from files"""
         self._test_fit_from_files(0.39205679297447205)

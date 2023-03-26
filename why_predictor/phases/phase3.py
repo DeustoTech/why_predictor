@@ -51,8 +51,7 @@ def move_models_to_phase3(
     fforma_eval_path: str, fforma_path: str, training_path: str
 ) -> None:
     """Move models to phase3 folder"""
-    utils.copy_models(fforma_path, fforma_eval_path)
+    fforma_dest_path = os.path.join(fforma_eval_path, "phase2")
+    utils.copy_models(fforma_path, fforma_dest_path)
     # Copy phase1 predicting models to phase2
-    phase2.move_models_to_phase2(
-        os.path.join(fforma_eval_path, "phase2"), training_path
-    )
+    phase2.move_models_to_phase2(fforma_dest_path, training_path)
