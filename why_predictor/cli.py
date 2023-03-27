@@ -211,6 +211,13 @@ def generate_parser() -> argparse.ArgumentParser:
         help="metric to calculate the error when evaluating "
         + "the final output of FFORMA",
     )
+    evaluate_fforma.add_argument(
+        "--use-fforms",
+        dest="use_fforms",
+        default=False,
+        action="store_true",
+        help="use this flag if you want to execute FFORMS instead of FFORMA",
+    )
     return parser
 
 
@@ -241,6 +248,7 @@ def process_args(args: argparse.Namespace) -> None:
         args.train_test_ratio_fforma_eval
     )
     config.ERROR_TYPE_FFORMA_EVALUATION = args.error_type_fforma_eval
+    config.USE_FFORMS = args.use_fforms
 
 
 def main() -> None:

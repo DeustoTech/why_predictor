@@ -19,8 +19,12 @@ def execute_phase_3(series: Dict[str, List[str]]) -> None:
     move_models_to_phase3(
         config.EVALUATION_PATH, config.FFORMA_PATH, config.TRAINING_PATH
     )
-    logger.info("Starting FFORMA evaluation process...")
-    evaluation.fforma.evaluate_fforma(series, config.EVALUATION_PATH)
+    if config.USE_FFORMS:
+        logger.info("Starting FFORMS evaluation process...")
+        evaluation.fforms.evaluate_fforms(series, config.EVALUATION_PATH)
+    else:
+        logger.info("Starting FFORMA evaluation process...")
+        evaluation.fforma.evaluate_fforma(series, config.EVALUATION_PATH)
     logger.info("Phase 3 finished.")
 
 

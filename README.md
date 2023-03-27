@@ -2,11 +2,14 @@
 
 [![Linter][linter-image]][linter-url]
 [![Unit-Tests][unit-tests-image]][unit-tests-url]
+[![Integration-Tests][integration-tests-image]][integration-tests-url]
 
 [linter-image]: https://github.com/DeustoTech/why_predictor/actions/workflows/linter.yml/badge.svg?branch=master
 [linter-url]: https://github.com/DeustoTech/why_predictor/actions/workflows/linter.yml
 [unit-tests-image]: https://github.com/DeustoTech/why_predictor/actions/workflows/unit-tests.yml/badge.svg?branch=master
 [unit-tests-url]: https://github.com/DeustoTech/why_predictor/actions/workflows/unit-tests.yml
+[integration-tests-image]: https://github.com/DeustoTech/why_predictor/actions/workflows/integration-tests.yml/badge.svg?branch=master
+[integration-tests-url]: https://github.com/DeustoTech/why_predictor/actions/workflows/integration-tests.yml
 
 ## install requirements
 `pip install -r requirements.txt`
