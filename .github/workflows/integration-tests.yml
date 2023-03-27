@@ -1,4 +1,4 @@
-name: Execute unit tests
+name: Execute integration tests
 on: push
 
 jobs:
@@ -14,4 +14,4 @@ jobs:
     - run: pip install -r requirements.txt
 
     - name: Unit tests
-      run: nose2 -s tests/unit/
+      run: nose2 -s tests/integration/
