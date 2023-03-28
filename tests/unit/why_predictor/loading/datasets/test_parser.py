@@ -12,6 +12,7 @@ import pandas as pd  # type: ignore
 from parameterized import parameterized  # type: ignore
 
 import why_predictor.panda_utils as pdu
+from why_predictor import config
 from why_predictor import loading
 
 
@@ -76,9 +77,9 @@ class DataFrameLoadingParserTest(unittest.TestCase):
         [
             (0, 0, 19717),
             (0.33, 6507, 13210),
-            (0.5, 9859, 9858),
-            (0.8, 15774, 3943),
-            (1, 19717, 0),
+            (0.5, config.MAX_DAYS_TRAINING, 9858),
+            (0.8, config.MAX_DAYS_TRAINING, 3943),
+            (1, config.MAX_DAYS_TRAINING, 0),
         ]
     )  # type: ignore
     def test_split_rolling_window_dtf_in_train_and_test(

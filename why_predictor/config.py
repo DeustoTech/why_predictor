@@ -11,6 +11,7 @@ NUM_PREDICTIONS = 6
 # JOBS
 # -1: means all CPUs, -2: all CPUs but one, -3: all but two...
 NJOBS = -3
+MAX_DAYS_TRAINING = 8760  # One year
 # MODEL TRAINING
 TRAINING_PERCENTAGE_MODELS = 0.25
 TRAIN_TEST_RATIO_MODELS = 0.5

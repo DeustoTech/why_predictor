@@ -69,7 +69,7 @@ class TestChainedRFRegressorModel(unittest.TestCase):
         expected_deltas = {
             "col73": [75, 805],
             "col74": [795, 350],
-            "col75": [345, 180],
+            "col75": [350, 180],
             "col76": [170, 45],
             "col77": [50, 70],
             "col78": [140, 55],

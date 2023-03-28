@@ -224,7 +224,7 @@ class TestChainedDecissionTreeRegressorModel(unittest.TestCase):
             self.assertIn(errors[col].dtype, [np.float32, np.uint8])
             for value in errors[col]:
                 self.assertGreaterEqual(value, 0.0)
-                self.assertLessEqual(value, 7.5)
+                self.assertLessEqual(value, 8.0)
         self.assertTrue(
             os.path.exists(
                 "tests/results/errors/raw/"

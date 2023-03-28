@@ -65,7 +65,7 @@ def split_rolling_window_dtf_in_train_and_test(
     """Split the rolling window dataframe in train and test"""
     limit = math.ceil(len(dtf) * train_test_ratio)
     test = dtf.iloc[limit:]
-    train = dtf.iloc[:limit]
+    train = dtf.iloc[: min(limit, config.MAX_DAYS_TRAINING)]
     return train, test
 
 

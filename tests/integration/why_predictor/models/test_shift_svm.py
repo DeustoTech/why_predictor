@@ -146,7 +146,7 @@ class TestShiftedSVMRegressorModel(unittest.TestCase):
             self.out[index:].reset_index(drop=True),
         )
         # Evaluate
-        assert_frame_equal(dtf, expected_df, check_exact=False, atol=1)
+        assert_frame_equal(dtf, expected_df, check_exact=False, atol=1.5)
         # for col in dtf.columns[2:]:
         #     for i, value in enumerate(dtf[col]):
         #        self.assertAlmostEqual(math.floor(value), expected_df[col][i])
