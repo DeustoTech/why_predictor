@@ -119,7 +119,7 @@ def friedman_test_with_post_hoc(
         f_result.write(f"Friedmanchisquare result: {f_test}\n")
     # Calculate post-hoc if p_value < 0.05
     if f_test.pvalue < 0.05:
-        new_columns = dict(zip(string.ascii_uppercase, columns))
+        new_columns = _generate_columns_dict(columns)
         friedman_df.columns = new_columns.keys()
         post_hoc = sp.posthoc_nemenyi_friedman(
             friedman_df.reset_index().iloc[:, 2:]
@@ -138,3 +138,18 @@ def friedman_test_with_post_hoc(
         legend_filename = os.path.join(base_path, "post-hoc", "legend.csv")
         with open(legend_filename, "w", encoding="utf8") as f_legend:
             f_legend.write(json.dumps(new_columns, indent=4))
+
+
+def _generate_columns_dict(columns):
+    columns_dict = {}
+    alphabet = string.ascii_uppercase  # Alphabet
+
+    for index, value in enumerate(columns):
+        key = ""
+        while index >= len(alphabet):  # Check if we need more than one letter
+            index -= len(alphabet)
+            key = alphabet[index] + key
+        key = alphabet[index] + key
+        columns_dict[key] = value
+
+    return columns_dict
