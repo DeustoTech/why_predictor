@@ -140,8 +140,8 @@ def friedman_test_with_post_hoc(
             f_legend.write(json.dumps(new_columns, indent=4))
 
 
-def _generate_columns_dict(columns):
-    columns_dict = {}
+def _generate_columns_dict(columns: List[str]) -> Dict[str, str]:
+    columns_dict: Dict[str, str] = {}
     alphabet = string.ascii_uppercase  # Alphabet
 
     for index, value in enumerate(columns):
