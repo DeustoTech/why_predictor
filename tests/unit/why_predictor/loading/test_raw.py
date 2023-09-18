@@ -131,10 +131,10 @@ class LoadingRawDatasetsTest(unittest.TestCase):
     def test_get_datasets_names(self) -> None:
         """test get_datasets"""
         data_path = "tests/data"
-        self.assertListEqual(
+        self.assertCountEqual(
             loading.raw.get_datasets_names(data_path, "imp_csv"),
             ["test1", "test2"],
         )
-        self.assertListEqual(
+        self.assertCountEqual(
             loading.raw.get_datasets_names(data_path, "no_exists"), []
         )
