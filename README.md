@@ -22,43 +22,52 @@ Edit the configuration file to modify the parameters or include the correspondin
 For more information, execute:
 
 ```ShellSession
-$ python3 -m why_predictor -h
-
-usage: python -m why_predictor [-h] [-v] [-m {generate-hyperparams,generate-fforma,evaluate-fforma,
-    full}]
-                               [--base-path-dataset DATASET_BASEPATH] [--dataset-dir-name PATH]
-                               [--window-num-features NUM_FEATURES] [--window-num-predictions NUM]
-                               [--use-models-training {SHIFT_LR,SHIFT_RF,SHIFT_KNN,SHIFT_DT,
-SHIFT_SVR,SHIFT_SGD,SHIFT_MLP,CHAIN_LR,CHAIN_RF,CHAIN_KNN,CHAIN_DT,CHAIN_SVR,CHAIN_SGD,CHAIN_MLP,
-MULTI_LR,MULTI_RF,MULTI_KNN,MULTI_DT,MULTI_SVR,MULTI_SGD,MULTI_MLP} [{SHIFT_LR,SHIFT_RF,SHIFT_KNN,
-SHIFT_DT,SHIFT_SVR,SHIFT_SGD,SHIFT_MLP,CHAIN_LR,CHAIN_RF,CHAIN_KNN,CHAIN_DT,CHAIN_SVR,CHAIN_SGD,
-CHAIN_MLP,MULTI_LR,MULTI_RF,MULTI_KNN,MULTI_DT,MULTI_SVR,MULTI_SGD,MULTI_MLP} ...]]
-                               [--error-type-training {MAPE,MAE,RMSE,SMAPE}]
-                               [--percentage-csv-files-for-training-hyperparameters PERCENTAGE]
-                               [--train-test-ratio-hyperparameters TRAIN_TEST_RATIO_HYPERPARAMS]
-                               [--use-models-fforma {SHIFT_LR,SHIFT_RF,SHIFT_KNN,SHIFT_DT,SHIFT_SVR,
-SHIFT_SGD,SHIFT_MLP,CHAIN_LR,CHAIN_RF,CHAIN_KNN,CHAIN_DT,CHAIN_SVR,CHAIN_SGD,CHAIN_MLP,MULTI_LR,
-MULTI_RF,MULTI_KNN,MULTI_DT,MULTI_SVR,MULTI_SGD,MULTI_MLP} [{SHIFT_LR,SHIFT_RF,SHIFT_KNN,SHIFT_DT,
-SHIFT_SVR,SHIFT_SGD,SHIFT_MLP,CHAIN_LR,CHAIN_RF,CHAIN_KNN,CHAIN_DT,CHAIN_SVR,CHAIN_SGD,CHAIN_MLP,
-MULTI_LR,MULTI_RF,MULTI_KNN,MULTI_DT,MULTI_SVR,MULTI_SGD,MULTI_MLP} ...]]
-                               [--error-type-fforma {MAPE,MAE,RMSE,SMAPE}]
-                               [--percentage-csv-files-for-training-fforma PERCENTAGE_FFORMA]
-                               [--train-test-ratio-fforma TRAIN_TEST_RATIO_FFORMA]
-                               [--percentage-csv-files-for-fforma-eval PERCENTAGE_FFORMA_EVAL]
-                               [--train-test-ratio-fforma-eval TRAIN_TEST_RATIO_FFORMA_EVAL]
-                               [--error-type-fforma-eval {MAPE,MAE,RMSE,SMAPE}]
+usage: python -m why_predictor [-h] [-v] [-m {generate-csvs,
+    generate-hyperparams,generate-fforma,evaluate-fforma,full}]
+       [--base-path-dataset DATASET_BASEPATH]
+       [--dataset-dir-name DATASET_DIR_NAME]
+       [--window-num-features NUM_FEATURES]
+       [--window-num-predictions NUM_PREDICTIONS]
+       [--save-datasets SAVE_DATASETS]
+       [--njobs NJOBS]
+       [--use-models-training {SHIFT_LR,SHIFT_RF,SHIFT_KNN,SHIFT_DT,SHIFT_SVR,SHIFT_SGD,
+           SHIFT_MLP,CHAIN_LR,CHAIN_RF,CHAIN_KNN,CHAIN_DT,CHAIN_SVR,CHAIN_SGD,CHAIN_MLP,
+           MULTI_LR,MULTI_RF,MULTI_KNN,MULTI_DT,MULTI_SVR,MULTI_SGD,MULTI_MLP}
+           [{SHIFT_LR,SHIFT_RF,SHIFT_KNN,SHIFT_DT,SHIFT_SVR,SHIFT_SGD,SHIFT_MLP,CHAIN_LR,
+             CHAIN_RF,CHAIN_KNN,CHAIN_DT,CHAIN_SVR,CHAIN_SGD,CHAIN_MLP,MULTI_LR,MULTI_RF,
+             MULTI_KNN,MULTI_DT,MULTI_SVR,MULTI_SGD,MULTI_MLP}
+           ...]]
+       [--error-type-training {MAPE,MAE,RMSE,SMAPE}]
+       [--percentage-csv-files-for-training-hyperparameters TRAINING_PERCENTAGE_HYPERPARAMS]
+       [--train-test-ratio-hyperparameters TRAIN_TEST_RATIO_HYPERPARAMS |
+        --initial-training-path INITIAL_TRAINING_PATH]
+       [--use-models-fforma {SHIFT_LR,SHIFT_RF,SHIFT_KNN,SHIFT_DT,SHIFT_SVR,SHIFT_SGD,SHIFT_MLP,
+           CHAIN_LR,CHAIN_RF,CHAIN_KNN,CHAIN_DT,CHAIN_SVR,CHAIN_SGD,CHAIN_MLP,MULTI_LR,MULTI_RF,
+           MULTI_KNN,MULTI_DT,MULTI_SVR,MULTI_SGD,MULTI_MLP}
+           [{SHIFT_LR,SHIFT_RF,SHIFT_KNN,SHIFT_DT,SHIFT_SVR,SHIFT_SGD,SHIFT_MLP,CHAIN_LR,
+             CHAIN_RF,CHAIN_KNN,CHAIN_DT,CHAIN_SVR,CHAIN_SGD,CHAIN_MLP,MULTI_LR,MULTI_RF,
+             MULTI_KNN,MULTI_DT,MULTI_SVR,MULTI_SGD,MULTI_MLP}
+           ...]]
+       [--error-type-fforma {MAPE,MAE,RMSE,SMAPE}]
+       [--percentage-csv-files-for-training-fforma TRAINING_PERCENTAGE_FFORMA]
+       [--train-test-ratio-fforma TRAIN_TEST_RATIO_FFORMA]
+       [--percentage-csv-files-for-fforma-eval TRAINING_PERCENTAGE_FFORMA_EVAL]
+       [--train-test-ratio-fforma-eval TRAIN_TEST_RATIO_FFORMA_EVAL]
+       [--error-type-fforma-eval {MAPE,MAE,RMSE,SMAPE}]
+       [--use-fforms]
 
 WHY Predictor
 
 options:
   -h, --help            show this help message and exit
   -v, --verbose
-  -m {generate-hyperparams,generate-fforma,evaluate-fforma,full}, --mode {generate-hyperparams,
-  generate-fforma,evaluate-fforma,full}
-                        Select the operation mode, by default it will run in full mode that includes
-                        both generate-errors and generate fforma. generate-errors: will only train 
-                        the models to generate the error files, while generate-fforma will assume
-                        the hyperparameters are already set, so it will generate the FFORMA model.
+  -m {generate-csvs,generate-hyperparams,generate-fforma,evaluate-fforma,full},
+  --mode {generate-csvs,generate-hyperparams,generate-fforma,evaluate-fforma,full}
+                        Select the operation mode, by default it will run in full mode that
+                        includes both generate-errors and generate fforma. generate-errors:
+                        will only train the models to generate the error files, while
+                        generate-fforma will assume the hyperparameters are already set, so
+                        it will generate the FFORMA model.
   --base-path-dataset DATASET_BASEPATH
                         base path where dataset are stored
   --dataset-dir-name DATASET_DIR_NAME
@@ -67,13 +76,17 @@ options:
                         num of hours used as features
   --window-num-predictions NUM_PREDICTIONS
                         num of hours used as predictions
+  --save-datasets SAVE_DATASETS
+                        save generated rolling-window datasets to disk
+  --njobs NJOBS         Number of CPUs to use. When negative values are provided, -1 means
+                        all CPUs, -2: means all CPUs but one, -3: means all CPUs but two...
 
 Model training:
   --use-models-training {SHIFT_LR,SHIFT_RF,SHIFT_KNN,SHIFT_DT,SHIFT_SVR,SHIFT_SGD,SHIFT_MLP,
-  CHAIN_LR,CHAIN_RF,CHAIN_KNN,CHAIN_DT,CHAIN_SVR,CHAIN_SGD,CHAIN_MLP,MULTI_LR,MULTI_RF,
-  MULTI_KNN,MULTI_DT,MULTI_SVR,MULTI_SGD,MULTI_MLP} [{SHIFT_LR,SHIFT_RF,SHIFT_KNN,SHIFT_DT,
-  SHIFT_SVR,SHIFT_SGD,SHIFT_MLP,CHAIN_LR,CHAIN_RF,CHAIN_KNN,CHAIN_DT,CHAIN_SVR,CHAIN_SGD,
-  CHAIN_MLP,MULTI_LR,MULTI_RF,MULTI_KNN,MULTI_DT,MULTI_SVR,MULTI_SGD,MULTI_MLP} ...]
+      CHAIN_LR,CHAIN_RF,CHAIN_KNN,CHAIN_DT,CHAIN_SVR,CHAIN_SGD,CHAIN_MLP,MULTI_LR,MULTI_RF,
+      MULTI_KNN,MULTI_DT,MULTI_SVR,MULTI_SGD,MULTI_MLP} [{SHIFT_LR,SHIFT_RF,SHIFT_KNN,SHIFT_DT,
+      SHIFT_SVR,SHIFT_SGD,SHIFT_MLP,CHAIN_LR,CHAIN_RF,CHAIN_KNN,CHAIN_DT,CHAIN_SVR,CHAIN_SGD,
+      CHAIN_MLP,MULTI_LR,MULTI_RF,MULTI_KNN,MULTI_DT,MULTI_SVR,MULTI_SGD,MULTI_MLP} ...]
                         Select what models to use:
                             SHIFT_LR (Shifted Linear Regression)
                             SHIFT_RF (Shifted Random Forest Regression)
@@ -101,14 +114,18 @@ Model training:
   --percentage-csv-files-for-training-hyperparameters TRAINING_PERCENTAGE_HYPERPARAMS
                         Percentage of the CSV files that will be used for training
   --train-test-ratio-hyperparameters TRAIN_TEST_RATIO_HYPERPARAMS
-                        ratio of samples used for training (1 - this value will be used for testing)
+                        ratio of samples used for training
+                        (1 - this value will be used for testing)
+  --initial-training-path INITIAL_TRAINING_PATH
+                        path to a folder where datasets will be used just for training of models
+                        in phase1 (if this mode if used)
 
 FFORMA training:
-  --use-models-fforma {SHIFT_LR,SHIFT_RF,SHIFT_KNN,SHIFT_DT,SHIFT_SVR,SHIFT_SGD,SHIFT_MLP,CHAIN_LR,
-  CHAIN_RF,CHAIN_KNN,CHAIN_DT,CHAIN_SVR,CHAIN_SGD,CHAIN_MLP,MULTI_LR,MULTI_RF,MULTI_KNN,MULTI_DT,
-  MULTI_SVR,MULTI_SGD,MULTI_MLP} [{SHIFT_LR,SHIFT_RF,SHIFT_KNN,SHIFT_DT,SHIFT_SVR,SHIFT_SGD,
-  SHIFT_MLP,CHAIN_LR,CHAIN_RF,CHAIN_KNN,CHAIN_DT,CHAIN_SVR,CHAIN_SGD,CHAIN_MLP,MULTI_LR,MULTI_RF,
-  MULTI_KNN,MULTI_DT,MULTI_SVR,MULTI_SGD,MULTI_MLP} ...]
+  --use-models-fforma {SHIFT_LR,SHIFT_RF,SHIFT_KNN,SHIFT_DT,SHIFT_SVR,SHIFT_SGD,SHIFT_MLP,
+      CHAIN_LR,CHAIN_RF,CHAIN_KNN,CHAIN_DT,CHAIN_SVR,CHAIN_SGD,CHAIN_MLP,MULTI_LR,MULTI_RF,
+      MULTI_KNN,MULTI_DT,MULTI_SVR,MULTI_SGD,MULTI_MLP} [{SHIFT_LR,SHIFT_RF,SHIFT_KNN,SHIFT_DT,
+      SHIFT_SVR,SHIFT_SGD,SHIFT_MLP,CHAIN_LR,CHAIN_RF,CHAIN_KNN,CHAIN_DT,CHAIN_SVR,CHAIN_SGD,
+      CHAIN_MLP,MULTI_LR,MULTI_RF,MULTI_KNN,MULTI_DT,MULTI_SVR,MULTI_SGD,MULTI_MLP} ...]
                         Select what models to use:
                             MULTI_LR (Multioutput Linear Regression)
                             MULTI_RF (Multioutput Random Forest Regression)
@@ -122,7 +139,8 @@ FFORMA training:
   --percentage-csv-files-for-training-fforma TRAINING_PERCENTAGE_FFORMA
                         Percentage of the CSV files that will be used for training
   --train-test-ratio-fforma TRAIN_TEST_RATIO_FFORMA
-                        ratio of samples used for training (1 - this value will be used for testing)
+                        ratio of samples used for training
+                        (1 - this value will be used for testing)
 
 FFORMA evaluation:
   --percentage-csv-files-for-fforma-eval TRAINING_PERCENTAGE_FFORMA_EVAL
@@ -132,5 +150,5 @@ FFORMA evaluation:
                         (1 - this value will be used for evaluation)
   --error-type-fforma-eval {MAPE,MAE,RMSE,SMAPE}
                         metric to calculate the error when evaluating the final output of FFORMA
-
+  --use-fforms          use this flag if you want to execute FFORMS instead of FFORMA
 ```
